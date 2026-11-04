@@ -147,7 +147,7 @@ export function ToolRunDialog({ toolId }: { toolId: string }) {
         </form>
       )}
       {status.kind !== 'idle' && (
-        <p role={status.kind === 'error' ? 'alert' : 'status'} className={`mt-3 rounded px-2 py-1.5 ${status.kind === 'error' ? 'bg-danger/20 text-red-200' : 'bg-app text-fg-muted'}`}>
+        <p role={status.kind === 'error' ? 'alert' : 'status'} className={`mt-3 rounded px-2 py-1.5 ${status.kind === 'error' ? 'bg-red-50 text-danger' : 'bg-app text-fg-muted'}`}>
           {status.kind === 'running' ? 'Running…' : status.message}
         </p>
       )}
@@ -279,7 +279,7 @@ export function CustomToolEditor({ toolId }: { toolId: string | null }) {
               useUi.getState().setToolInstalled(existing.manifest.id, false);
               close();
             }}
-            className="rounded border border-danger/50 px-3 py-1.5 text-red-300 hover:bg-danger/20"
+            className="rounded border border-red-200 px-3 py-1.5 text-danger hover:bg-red-50"
           >
             Delete tool
           </button>
@@ -358,7 +358,7 @@ export function Player() {
   };
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={player.mode === 'flipbook' ? 'Flipbook player' : 'Slideshow player'} className="fixed inset-0 z-[60] flex flex-col bg-[#0b0b0d]">
+    <div role="dialog" aria-modal="true" aria-label={player.mode === 'flipbook' ? 'Flipbook player' : 'Slideshow player'} className="fixed inset-0 z-[60] flex flex-col bg-field">
       <div className="flex h-11 shrink-0 items-center justify-between px-4 text-fg-muted">
         <span>
           {player.mode === 'flipbook' ? 'Flipbook' : 'Slides'} · {index + 1} / {count}

@@ -20,7 +20,7 @@ describe('DesignTab', () => {
   it('shows page properties when nothing is selected', () => {
     render(<DesignTab />);
     expect(screen.getByRole('region', { name: 'Page' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Page background hex')).toHaveValue('1E1E1E');
+    expect(screen.getByLabelText('Page background hex')).toHaveValue('F3F4F6');
   });
 
   it('edits the selected node immediately and supports undo', async () => {

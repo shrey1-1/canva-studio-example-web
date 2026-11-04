@@ -4,13 +4,11 @@ import { createDocument, DocumentError, migrateDocument, type DesignDocument } f
 import { HttpError, requireFile, requireProject, requireUser } from '../access';
 import type { Db, Queryable } from '../db';
 import { FILE_META_SQL } from './projects';
+import { persistDocument, snapshot } from '../persist';
+import type { CollabHub } from '../collab';
 
 const idParam = { type: 'object', required: ['id'], properties: { id: { type: 'string', format: 'uuid' } } } as const;
 const DOC_LIMIT = 25 * 1024 * 1024;
-/** An automatic version is kept at most this often while someone edits. */
-export const AUTO_VERSION_INTERVAL_MS = 10 * 60_000;
-export const MAX_AUTO_VERSIONS = 50;
-
 /** Untrusted document JSON -> a valid current-version document, or a 400. */
 function validDocument(raw: unknown): DesignDocument {
   try {
@@ -22,28 +20,13 @@ function validDocument(raw: unknown): DesignDocument {
 
 const assetIdsOf = (doc: DesignDocument) => [...new Set(Object.values(doc.nodes).flatMap((n) => (n.type === 'image' ? [n.assetId] : [])))];
 
-async function snapshot(db: Queryable, fileId: string, userId: string, label: string | null, auto: boolean) {
-  await db.query(
-    `insert into file_versions (id, file_id, label, auto, document, revision, created_by)
-     select $1, id, $3, $4, document, revision, $5 from files where id = $2`,
-    [randomUUID(), fileId, label, auto, userId],
-  );
-  if (auto) {
-    await db.query(
-      `delete from file_versions where id in (
-         select id from file_versions where file_id = $1 and auto order by created_at desc offset $2)`,
-      [fileId, MAX_AUTO_VERSIONS],
-    );
-  }
-}
-
 async function folderInProject(db: Queryable, folderId: string | null | undefined, projectId: string) {
   if (!folderId) return;
   const { rows } = await db.query('select 1 from folders where id = $1 and project_id = $2', [folderId, projectId]);
   if (!rows.length) throw new HttpError(400, 'Folder not found in this project.');
 }
 
-export const fileRoutes: FastifyPluginAsync<{ db: Db }> = async (app, { db }) => {
+export const fileRoutes: FastifyPluginAsync<{ db: Db; hub?: CollabHub }> = async (app, { db, hub }) => {
   /** Recently edited files across all of the user's projects. */
   app.get('/api/files/recent', async (req) => {
     const user = requireUser(req.user);
@@ -51,8 +34,9 @@ export const fileRoutes: FastifyPluginAsync<{ db: Db }> = async (app, { db }) =>
       `select ${FILE_META_SQL}, p.name as "projectName", m.role from files f
        join project_members m on m.project_id = f.project_id and m.user_id = $1
        join projects p on p.id = f.project_id
+       where $2::uuid is null or f.project_id = $2
        order by f.updated_at desc limit 50`,
-      [user.id],
+      [user.id, user.token?.projectId ?? null],
     );
     return { files: rows };
   });
@@ -110,24 +94,11 @@ export const fileRoutes: FastifyPluginAsync<{ db: Db }> = async (app, { db }) =>
       await requireFile(db, user, req.params.id, 'editor');
       const doc = validDocument(req.body.document);
       if (doc.id !== req.params.id) throw new HttpError(400, 'Document id does not match the file.');
-      doc.updatedAt = new Date().toISOString();
-      return db.transaction(async (tx) => {
-        const updated = await tx.query<{ revision: number; project_id: string }>(
-          `update files set document = $2, name = $3, revision = revision + 1, updated_at = now(), updated_by = $4
-           where id = $1 and revision = $5 returning revision, project_id`,
-          [req.params.id, JSON.stringify(doc), doc.name, user.id, req.body.baseRevision],
-        );
-        const row = updated.rows[0];
-        if (!row) {
-          const current = await tx.query<{ revision: number }>('select revision from files where id = $1', [req.params.id]);
-          throw new HttpError(409, 'This file was changed by someone else.', { revision: current.rows[0]?.revision });
-        }
-        await tx.query('update projects set updated_at = now() where id = $1', [row.project_id]);
-        const last = await tx.query<{ created_at: Date }>('select created_at from file_versions where file_id = $1 and auto order by created_at desc limit 1', [req.params.id]);
-        const lastAt = last.rows[0] ? new Date(last.rows[0].created_at).getTime() : 0;
-        if (Date.now() - lastAt >= AUTO_VERSION_INTERVAL_MS) await snapshot(tx, req.params.id, user.id, null, true);
-        return { revision: row.revision, updatedAt: doc.updatedAt };
-      });
+      // Live edits are saved first, so the revision check sees them.
+      await hub?.flushFile(req.params.id);
+      const revision = await db.transaction((tx) => persistDocument(tx, req.params.id, user.id, doc, req.body.baseRevision));
+      hub?.replaced(req.params.id, doc, revision);
+      return { revision, updatedAt: new Date().toISOString() };
     },
   );
 
@@ -150,6 +121,7 @@ export const fileRoutes: FastifyPluginAsync<{ db: Db }> = async (app, { db }) =>
       const target = req.body.projectId ?? projectId;
       if (target !== projectId) await requireProject(db, user, target, 'editor');
       if (req.body.folderId !== undefined) await folderInProject(db, req.body.folderId, target);
+      if (req.body.name) await hub?.flushFile(req.params.id);
       await db.transaction(async (tx) => {
         if (target !== projectId) {
           // Images travel with the file.
@@ -171,6 +143,10 @@ export const fileRoutes: FastifyPluginAsync<{ db: Db }> = async (app, { db }) =>
           );
         }
       });
+      if (req.body.name) {
+        const { rows } = await db.query<{ document: DesignDocument; revision: number }>('select document, revision from files where id = $1', [req.params.id]);
+        if (rows[0]) hub?.replaced(req.params.id, rows[0].document, rows[0].revision);
+      }
       return { ok: true };
     },
   );
@@ -179,6 +155,7 @@ export const fileRoutes: FastifyPluginAsync<{ db: Db }> = async (app, { db }) =>
     const user = requireUser(req.user);
     await requireFile(db, user, req.params.id, 'editor');
     await db.query('delete from files where id = $1', [req.params.id]);
+    hub?.close(req.params.id);
     return reply.status(204).send();
   });
 
@@ -212,6 +189,7 @@ export const fileRoutes: FastifyPluginAsync<{ db: Db }> = async (app, { db }) =>
     async (req, reply) => {
       const user = requireUser(req.user);
       await requireFile(db, user, req.params.id, 'editor');
+      await hub?.flushFile(req.params.id);
       await snapshot(db, req.params.id, user.id, req.body.label.trim(), false);
       return reply.status(201).send({ ok: true });
     },
@@ -224,7 +202,8 @@ export const fileRoutes: FastifyPluginAsync<{ db: Db }> = async (app, { db }) =>
     async (req) => {
       const user = requireUser(req.user);
       await requireFile(db, user, req.params.id, 'editor');
-      return db.transaction(async (tx) => {
+      await hub?.flushFile(req.params.id);
+      const result = await db.transaction(async (tx) => {
         const { rows } = await tx.query<{ document: unknown }>('select document from file_versions where id = $1 and file_id = $2', [req.params.versionId, req.params.id]);
         if (!rows[0]) throw new HttpError(404, 'Version not found.');
         const doc = validDocument(rows[0].document);
@@ -237,6 +216,8 @@ export const fileRoutes: FastifyPluginAsync<{ db: Db }> = async (app, { db }) =>
         );
         return { document: doc, revision: updated.rows[0]!.revision };
       });
+      hub?.replaced(req.params.id, result.document, result.revision);
+      return result;
     },
   );
 

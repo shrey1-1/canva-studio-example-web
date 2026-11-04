@@ -37,7 +37,7 @@ export function Inspector() {
             type="button"
             aria-label="Present"
             onClick={() => navigate(`/file/${docId}/present`)}
-            className="flex h-7 items-center gap-1 rounded bg-accent px-2.5 font-medium hover:bg-accent-hover"
+            className="btn flex h-7 items-center gap-1 rounded-md bg-accent px-2.5 font-medium text-white hover:bg-accent-hover"
           >
             <Play size={12} fill="currentColor" /> Present
           </button>

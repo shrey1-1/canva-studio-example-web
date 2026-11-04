@@ -51,6 +51,8 @@ import { inkFor, nextName, placeAt, rectsIntersect, visibleWorldRect } from '../
 import { isTypingTarget } from '../shortcuts/isTypingTarget';
 import { COMPONENT_COLOR, FRAME_LABEL, SCENE_NODE, SceneNodes } from './SceneRenderer';
 import { PrototypeConnections } from './PrototypeConnections';
+import { PresenceLayer } from '../../collab/PresenceLayer';
+import { CommentsLayer } from '../../collab/CommentsLayer';
 import { Rulers, RULER_SIZE } from './Rulers';
 import { TextEditor } from './TextEditor';
 import { fitToContent } from './viewportActions';
@@ -61,7 +63,7 @@ export const SNAP_SIZE = 8;
 const SNAP_DISTANCE_PX = 6;
 /** Screen pixels the pointer must travel before a press becomes a drag. */
 const DRAG_THRESHOLD_PX = 3;
-const ACCENT = '#3B82F6';
+const ACCENT = '#074CE0';
 const GUIDE = '#F43F5E';
 
 const BOX_TOOLS: CanvasTool[] = ['frame', 'rectangle', 'ellipse', 'polygon', 'star'];
@@ -836,7 +838,7 @@ export function CanvasView() {
                   stroke={ACCENT}
                   strokeWidth={1 / zoom}
                   dash={overlay.rect.kind === 'text' ? [4 / zoom, 4 / zoom] : undefined}
-                  fill={overlay.rect.kind === 'text' ? undefined : 'rgba(59,130,246,0.08)'}
+                  fill={overlay.rect.kind === 'text' ? undefined : 'rgba(7,76,224,0.08)'}
                   cornerRadius={overlay.rect.ellipse ? Math.max(overlay.rect.width, overlay.rect.height) / 2 : 0}
                 />
               )}
@@ -871,6 +873,8 @@ export function CanvasView() {
         </Stage>
       )}
       <TextEditor />
+      <PresenceLayer />
+      <CommentsLayer />
       {fileOver && (
         <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-lg border-2 border-dashed border-accent bg-accent/10 text-fg">
           Drop images to place them
@@ -924,7 +928,7 @@ function PenPreview({ pen, zoom }: { pen: PenState; zoom: number }) {
 function GridShape({ width, height, x, y, zoom }: { width: number; height: number; x: number; y: number; zoom: number }) {
   return (
     <Shape
-      stroke="rgba(255,255,255,0.06)"
+      stroke="rgba(128,128,128,0.18)"
       strokeWidth={1}
       perfectDrawEnabled={false}
       sceneFunc={(ctx, shape) => {

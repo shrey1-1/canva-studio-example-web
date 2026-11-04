@@ -53,7 +53,7 @@ export function EditorRoute() {
       <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
         <h1 className="text-base font-semibold">{state === 'missing' ? 'File not found' : 'Could not open this file'}</h1>
         <p className="text-fg-muted">{state === 'missing' ? 'It may have been deleted, or you no longer have access to it.' : errorText}</p>
-        <Link to="/" className="rounded bg-accent px-3 py-1.5 font-medium hover:bg-accent-hover">
+        <Link to="/" className="btn rounded-md bg-accent px-3.5 py-2 font-medium text-white hover:bg-accent-hover">
           Go to your files
         </Link>
       </div>

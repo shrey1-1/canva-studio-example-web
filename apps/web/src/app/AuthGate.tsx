@@ -55,11 +55,11 @@ function SignIn({ notice }: { notice: string | null }) {
   };
 
   return (
-    <div className="flex h-full items-center justify-center bg-app p-4">
-      <form onSubmit={submit} aria-label={mode === 'login' ? 'Sign in' : 'Create account'} className="w-full max-w-sm space-y-3 rounded-lg border border-edge bg-sidebar p-6 shadow-2xl">
+    <div className="page-type flex h-full items-center justify-center bg-ground p-4">
+      <form onSubmit={submit} aria-label={mode === 'login' ? 'Sign in' : 'Create account'} className="w-full max-w-sm space-y-4 rounded-panel border border-edge bg-panel p-7 shadow-card">
         <div>
-          <p className="text-2xs font-semibold tracking-wide text-accent uppercase">Canvas Studio</p>
-          <h1 className="mt-1 text-lg font-semibold">{mode === 'login' ? 'Sign in' : 'Create your account'}</h1>
+          <p className="text-[12px] font-semibold tracking-wide text-accent-fg uppercase">Canvas Studio</p>
+          <h1 className="mt-1 text-[28px] font-bold">{mode === 'login' ? 'Sign in' : 'Create your account'}</h1>
         </div>
         {notice && mode === 'login' && <p className="rounded bg-hover px-2 py-1.5 text-fg-muted">{notice}</p>}
         {mode === 'signup' && (
@@ -85,13 +85,19 @@ function SignIn({ notice }: { notice: string | null }) {
           />
           {mode === 'signup' && <span className="text-2xs text-fg-subtle">At least 8 characters.</span>}
         </label>
+        {mode === 'signup' && (
+          <label className="flex items-start gap-2 text-fg-muted">
+            <input type="checkbox" required className="mt-0.5 accent-accent" />
+            <span>I am at least 16 years old.</span>
+          </label>
+        )}
         {error && <p role="alert" className="text-danger">{error}</p>}
         <button type="submit" disabled={busy} className={`${primaryButton} w-full`}>
           {busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
         </button>
         <p className="text-center text-fg-muted">
           {mode === 'login' ? 'New here?' : 'Already have an account?'}{' '}
-          <button type="button" className="text-accent hover:underline" onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); }}>
+          <button type="button" className="text-accent-fg hover:underline" onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); }}>
             {mode === 'login' ? 'Create an account' : 'Sign in'}
           </button>
         </p>

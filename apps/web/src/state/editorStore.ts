@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { produce } from 'immer';
 import {
   createDocument,
+  documentProblem,
   finalizeDocument as finalizeCore,
   type DesignDocument,
   type NodeId,
@@ -10,6 +11,7 @@ import {
   type Viewport,
 } from '@canvas-studio/core';
 import { measureText } from '../editor/canvas/textMeasure';
+import { useToasts } from './toastStore';
 import { commit, redo as redoHistory, undo as undoHistory, type CommitOptions, type HistoryState } from './history';
 
 export type ShapeTool = 'rectangle' | 'line' | 'arrow' | 'ellipse' | 'polygon' | 'star';
@@ -51,6 +53,8 @@ interface EditorState {
   /** Viewers can look around (select, zoom, present) but not change the document. */
   readOnly: boolean;
   setReadOnly: (readOnly: boolean) => void;
+  /** Replaces the document with a version from a collaborator (no undo entry). */
+  applyRemoteDoc: (doc: DesignDocument, opts?: { finalize?: boolean }) => void;
   undo: () => void;
   redo: () => void;
   setActivePage: (pageId: PageId) => void;
@@ -75,6 +79,21 @@ function validPage(doc: DesignDocument, pageId: PageId): PageId {
 }
 
 const initialDoc = createDocument();
+
+/**
+ * Runs an undo/redo step. With live collaboration, someone else may have changed or deleted the
+ * layers a step refers to; such a step cannot be replayed, so the history is cleared instead.
+ */
+function safeStep<T extends { doc: DesignDocument }>(step: () => T | null): T | null | 'conflict' {
+  try {
+    const result = step();
+    if (result && documentProblem(result.doc)) throw new Error('conflict');
+    return result;
+  } catch {
+    useToasts.getState().push('Undo history was cleared because collaborators changed the same layers.');
+    return 'conflict';
+  }
+}
 
 export const useEditor = create<EditorState>()((set, get) => ({
   doc: initialDoc,
@@ -103,6 +122,14 @@ export const useEditor = create<EditorState>()((set, get) => ({
   readOnly: false,
   setReadOnly: (readOnly) => set({ readOnly }),
 
+  applyRemoteDoc: (incoming, opts = {}) => {
+    const doc = opts.finalize ? produce(incoming, (d) => finalizeDocument(d)) : incoming;
+    set((s) => {
+      const pageId = validPage(doc, s.activePageId);
+      return { doc, activePageId: pageId, selection: validSelection(doc, pageId, s.selection) };
+    });
+  },
+
   dispatch: (label, recipe, options) => {
     if (get().readOnly) return;
     const { doc, history, activePageId, selection } = get();
@@ -129,7 +156,8 @@ export const useEditor = create<EditorState>()((set, get) => ({
   undo: () => {
     if (get().readOnly) return;
     const { doc, history, activePageId, selection } = get();
-    const result = undoHistory(doc, history);
+    const result = safeStep(() => undoHistory(doc, history));
+    if (result === 'conflict') return set({ history: emptyHistory() });
     if (!result) return;
     const pageId = validPage(result.doc, activePageId);
     set({ ...result, activePageId: pageId, selection: validSelection(result.doc, pageId, selection) });
@@ -138,7 +166,8 @@ export const useEditor = create<EditorState>()((set, get) => ({
   redo: () => {
     if (get().readOnly) return;
     const { doc, history, activePageId, selection } = get();
-    const result = redoHistory(doc, history);
+    const result = safeStep(() => redoHistory(doc, history));
+    if (result === 'conflict') return set({ history: emptyHistory() });
     if (!result) return;
     const pageId = validPage(result.doc, activePageId);
     set({ ...result, activePageId: pageId, selection: validSelection(result.doc, pageId, selection) });

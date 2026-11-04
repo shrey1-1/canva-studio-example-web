@@ -36,7 +36,7 @@ export function NavRail() {
 
   return (
     <nav aria-label="Workspaces" className="flex w-12 shrink-0 flex-col items-center gap-1 border-r border-edge bg-sidebar py-2">
-      <div aria-hidden="true" className="mb-2 flex h-8 w-8 items-center justify-center rounded-md bg-accent text-[11px] font-bold tracking-tight">
+      <div aria-hidden="true" className="mb-2 flex h-8 w-8 items-center justify-center rounded-md bg-accent font-display text-[11px] font-bold tracking-tight text-white">
         CS
       </div>
       <div role="tablist" aria-orientation="vertical" aria-label="Workspaces" className="flex flex-col gap-1">

@@ -4,7 +4,7 @@
  *  - Sessions: a random 32-byte token in an httpOnly cookie; only its SHA-256 hash is stored, so a
  *    database leak does not leak usable sessions.
  */
-import { createHash, randomBytes, scrypt as scryptCb, timingSafeEqual, type ScryptOptions } from 'node:crypto';
+import { createHash, randomBytes, randomUUID, scrypt as scryptCb, timingSafeEqual, type ScryptOptions } from 'node:crypto';
 import type { Queryable } from './db';
 
 const scrypt = (password: string, salt: Buffer, keylen: number, opts: ScryptOptions) =>
@@ -47,6 +47,31 @@ export interface SessionUser {
   id: string;
   email: string;
   name: string;
+  /** Set when the request uses an agent access token instead of a browser session. */
+  token?: { id: string; scopes: 'read' | 'write'; projectId: string | null };
+}
+
+export const TOKEN_PREFIX = 'cs_pat_';
+
+/** Creates an agent access token. The secret is returned once; only its hash is stored. */
+export async function createApiToken(db: Queryable, userId: string, name: string, scopes: 'read' | 'write', projectId: string | null) {
+  const secret = TOKEN_PREFIX + randomBytes(32).toString('base64url');
+  const id = randomUUID();
+  await db.query('insert into api_tokens (id, user_id, name, token_hash, scopes, project_id) values ($1, $2, $3, $4, $5, $6)', [id, userId, name, tokenHash(secret), scopes, projectId]);
+  return { id, secret };
+}
+
+export async function userForToken(db: Queryable, secret: string): Promise<SessionUser | null> {
+  if (!secret.startsWith(TOKEN_PREFIX) || secret.length > 200) return null;
+  const { rows } = await db.query<{ id: string; email: string; name: string; token_id: string; scopes: 'read' | 'write'; project_id: string | null }>(
+    `select u.id, u.email, u.name, t.id as token_id, t.scopes, t.project_id from api_tokens t join users u on u.id = t.user_id
+     where t.token_hash = $1 and t.revoked_at is null`,
+    [tokenHash(secret)],
+  );
+  const r = rows[0];
+  if (!r) return null;
+  await db.query('update api_tokens set last_used_at = now() where id = $1', [r.token_id]);
+  return { id: r.id, email: r.email, name: r.name, token: { id: r.token_id, scopes: r.scopes, projectId: r.project_id } };
 }
 
 export async function userForSession(db: Queryable, token: string | undefined): Promise<SessionUser | null> {

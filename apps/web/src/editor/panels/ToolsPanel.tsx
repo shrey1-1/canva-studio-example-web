@@ -13,7 +13,7 @@ import { useUi } from '../../state/uiStore';
 import { useCustomTools } from '../../state/customToolsStore';
 import { useToolUi } from '../plugins/runTool';
 import { toolIcon } from '../toolIcons';
-import { PanelHeader } from './UpcomingPanel';
+import { PanelHeader } from './PanelHeader';
 
 const SOURCES: { value: ToolSource | 'all'; label: string }[] = [
   { value: 'all', label: 'All sources' },
@@ -106,7 +106,7 @@ export function ToolsPanel() {
         {results.length === 0 ? (
           <div className="px-3 py-6 text-center text-fg-subtle">
             <p>No tools match these filters.</p>
-            <button type="button" className="mt-2 text-accent hover:underline"
+            <button type="button" className="mt-2 text-accent-fg hover:underline"
               onClick={() => setQuery({ search: '', source: 'all', category: 'all', install: 'all' })}>
               Clear filters
             </button>
@@ -164,7 +164,7 @@ function ToolCard({ tool, installed, runs }: { tool: ToolManifest; installed: bo
                 onClick={() => setInstalled(tool.id, !installed)}
                 aria-label={`${installed ? 'Uninstall' : 'Install'} ${tool.name}`}
                 className={`rounded px-2 py-0.5 text-2xs font-medium ${
-                  installed ? 'border border-edge text-fg-muted hover:bg-hover' : 'bg-accent text-fg hover:bg-accent-hover'
+                  installed ? 'border border-edge text-fg-muted hover:bg-hover' : 'bg-accent text-white hover:bg-accent-hover'
                 }`}
               >
                 {installed ? 'Uninstall' : 'Install'}
@@ -175,7 +175,7 @@ function ToolCard({ tool, installed, runs }: { tool: ToolManifest; installed: bo
                 type="button"
                 onClick={() => openRun(tool.id)}
                 aria-label={`Run ${tool.name}`}
-                className="flex items-center gap-1 rounded bg-accent px-2 py-0.5 text-2xs font-medium text-fg hover:bg-accent-hover"
+                className="flex items-center gap-1 rounded bg-accent px-2 py-0.5 text-2xs font-medium text-white hover:bg-accent-hover"
               >
                 <Play size={10} /> Run
               </button>

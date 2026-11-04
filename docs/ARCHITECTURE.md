@@ -191,6 +191,47 @@ node count) before use. Pasting image files or plain text creates image or text 
   - `AuthGate` wraps all routes.
   - Viewers get a read-only editor (`editorStore.readOnly`).
 
+## Collaboration, comments, agents, export (Phase 7)
+
+- **Live sync** (`apps/server/src/collab.ts`, `apps/web/src/collab/`):
+  - Each open file has a room on the server holding the authoritative document. Clients send
+    node-level changes (`core/sync.ts`: `diffDocuments` / `applyDocChange`), batched every 60 ms.
+  - The room validates the whole document before accepting a change. Rejected changes resync
+    the sender.
+  - Accepted changes go to the other clients, and the room saves to the database about 800 ms
+    after edits stop.
+  - HTTP writes (agents, restore, rename) reach open editors as a `reset`.
+  - Sockets require the session cookie and a same-origin `Origin`. Viewers cannot send changes.
+  - See ADR 0006.
+- **Presence:** cursor, selection and page, throttled to about 20 per second, drawn as HTML over
+  the canvas.
+- **Comments:** stored in the `comments` table (migration 002), pinned to the top-level frame
+  under the click so they move with it. Changes are announced through the room.
+- **Agents:**
+  - Users create access tokens (`api_tokens`, SHA-256 hashed, read or write, optionally limited
+    to one project).
+  - Tokens can only use an allow-list of file, comment and asset endpoints, never accounts,
+    tokens or sharing.
+  - `apps/server/src/mcp.ts` is a stdio MCP server that calls the HTTP API with the token, so the
+    same permission checks apply. Layer updates go through core `safePatch`.
+- **Export:**
+  - PNG and JPG are rendered from the canvas (Konva) at 0.5x–4x, capped at 16,384 px per side.
+  - SVG comes from core `exportSvg`, with images embedded as data URLs.
+  - PDF comes from core `buildPdf`, with one JPEG page per layer and no PDF library.
+
+## Visual design
+
+- Tokens live in `apps/web/src/index.css`. The `--dp-*` variables are the design system's
+  authoritative values; the Tailwind theme colours (`app`, `panel`, `edge`, `fg`, `accent`, …)
+  map onto them. All text colours are checked for WCAG AA contrast, and `npm run e2e` runs axe.
+- Fonts: Host Grotesk (headings, `font-display`) and Instrument Sans (text), loaded from Google
+  Fonts in `index.html`. Self-hosting them would avoid sending visitors' IP addresses to Google;
+  that is worth doing before an EU launch.
+- The editor keeps a dense 12px interface. Reading pages (sign-in, file browser) use `.page-type`
+  (15px interface size, 1.6 leading).
+- Buttons get a `.btn` hover lift (160 ms ease-out). With reduced motion, all transitions and the
+  lift are switched off.
+
 ## Routes
 
 | Path | Screen |

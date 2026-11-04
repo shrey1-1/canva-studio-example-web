@@ -8,7 +8,7 @@ import { IconButton } from '../../ui/IconButton';
 import { SceneNodes } from '../canvas/SceneRenderer';
 import * as cmd from '../commands';
 import { rectCenter, visibleWorldRect } from '../placement';
-import { PanelHeader } from './UpcomingPanel';
+import { PanelHeader } from './PanelHeader';
 
 /** MIME type used when dragging a component from this panel onto the canvas. */
 export const COMPONENT_DRAG_TYPE = 'application/x-canvas-studio-component';

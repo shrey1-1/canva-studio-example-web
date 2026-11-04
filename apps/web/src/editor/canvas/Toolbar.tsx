@@ -23,7 +23,9 @@ import {
   ZoomIn,
   ZoomOut,
   type LucideIcon,
+  MessageCircle,
 } from 'lucide-react';
+import { useCommentsUi } from '../../collab/CommentsLayer';
 import { SHAPE_TOOLS, selectCanRedo, selectCanUndo, useEditor, type CanvasTool, type ShapeTool } from '../../state/editorStore';
 import { useUi } from '../../state/uiStore';
 import { ACCEPTED_IMAGE_TYPES } from '../../persistence/assetStore';
@@ -109,7 +111,7 @@ function ShapeTools() {
                   setTool(id);
                   setOpen(false);
                 }}
-                className="flex h-7 w-full items-center gap-2 px-3 text-left text-fg hover:bg-accent focus:bg-accent focus:outline-none"
+                className="flex h-7 w-full items-center gap-2 px-3 text-left text-fg hover:bg-accent hover:text-white focus:bg-accent focus:text-white focus:outline-none"
               >
                 <s.icon size={14} aria-hidden="true" />
                 <span className="flex-1">{s.label}</span>
@@ -120,6 +122,16 @@ function ShapeTools() {
         </div>
       )}
     </div>
+  );
+}
+
+function CommentButton() {
+  const placing = useCommentsUi((s) => s.placing);
+  const setPlacing = useCommentsUi((s) => s.setPlacing);
+  return (
+    <IconButton label="Comment" shortcut="C" tooltipSide="top" active={placing} onClick={() => setPlacing(!placing)}>
+      <MessageCircle size={15} />
+    </IconButton>
   );
 }
 
@@ -167,6 +179,7 @@ export function Toolbar() {
           if (files.length) void insertImages(files);
         }}
       />
+      <CommentButton />
       <Divider />
       <IconButton label="Undo" shortcut="Ctrl+Z" tooltipSide="top" disabled={!canUndo} onClick={undo}>
         <Undo2 size={15} />

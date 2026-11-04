@@ -1,10 +1,9 @@
-import { Bot } from 'lucide-react';
 import { useUi } from '../../state/uiStore';
 import { ErrorBoundary } from '../../app/ErrorBoundary';
 import { NAV_ITEMS } from '../nav/NavRail';
 import { FilePanel } from './FilePanel';
 import { ToolsPanel } from './ToolsPanel';
-import { UpcomingPanel } from './UpcomingPanel';
+import { AgentsPanel } from './AgentsPanel';
 import { AssetsPanel } from './AssetsPanel';
 import { VariablesPanel } from './VariablesPanel';
 
@@ -28,14 +27,7 @@ export function SecondaryPanel() {
         <ErrorBoundary area={`${label} panel`} key={nav}>
           {nav === 'file' && <FilePanel />}
           {nav === 'tools' && <ToolsPanel />}
-          {nav === 'agents' && (
-            <UpcomingPanel
-              title="Agents"
-              icon={Bot}
-              phase={7}
-              description="Connect external AI agents over MCP with read-only, canvas, asset, file and export permissions."
-            />
-          )}
+          {nav === 'agents' && <AgentsPanel />}
           {nav === 'assets' && <AssetsPanel />}
           {nav === 'variables' && <VariablesPanel />}
         </ErrorBoundary>

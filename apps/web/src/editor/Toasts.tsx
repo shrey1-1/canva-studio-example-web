@@ -10,8 +10,8 @@ export function Toasts() {
         <div
           key={t.id}
           role={t.kind === 'error' ? 'alert' : 'status'}
-          className={`pointer-events-auto flex items-start gap-2 rounded-md border px-3 py-2 shadow-xl ${
-            t.kind === 'error' ? 'border-danger/60 bg-[#3a1d1d] text-red-200' : 'border-edge bg-sidebar text-fg'
+          className={`pointer-events-auto flex items-start gap-2 rounded-panel border px-3 py-2 shadow-card ${
+            t.kind === 'error' ? 'border-red-200 bg-red-50 text-red-800' : 'border-edge bg-panel text-fg'
           }`}
         >
           <p className="flex-1">{t.message}</p>

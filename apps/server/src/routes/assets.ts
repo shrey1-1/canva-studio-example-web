@@ -58,8 +58,9 @@ export const assetRoutes: FastifyPluginAsync<{ db: Db }> = async (app, { db }) =
     const { rows } = await db.query<{ mime: string; width: number; height: number; data: Uint8Array; created_at: Date }>(
       `select a.mime, a.width, a.height, a.data, a.created_at from assets a
        join project_members m on m.project_id = a.project_id and m.user_id = $2
-       where a.id = $1 limit 1`,
-      [req.params.sha, user.id],
+       where a.id = $1 and ($3::uuid is null or a.project_id = $3) limit 1`,
+      // A token limited to one project only sees that project's images.
+      [req.params.sha, user.id, user.token?.projectId ?? null],
     );
     const asset = rows[0];
     if (!asset) throw new HttpError(404, 'Image not found.');

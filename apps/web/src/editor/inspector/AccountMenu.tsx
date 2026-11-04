@@ -37,7 +37,7 @@ export function AccountMenu() {
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-1 rounded px-1 py-0.5 hover:bg-hover"
       >
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-500 text-2xs font-semibold">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-white text-2xs font-semibold">
           {initials(name)}
         </span>
         <ChevronDown size={12} className="text-fg-muted" />

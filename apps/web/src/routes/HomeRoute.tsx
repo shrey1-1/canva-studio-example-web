@@ -37,6 +37,7 @@ type Dialog =
   | { kind: 'confirm'; title: string; text: string; action: string; submit: () => Promise<void> }
   | { kind: 'move'; file: FileMeta }
   | { kind: 'share' }
+  | { kind: 'account' }
   | null;
 
 const IMPORTED_KEY = 'canvas-studio:imported';
@@ -164,10 +165,10 @@ export function HomeRoute() {
   const folders = project ? project.folders.filter((f) => f.parentId === folderId) : [];
 
   return (
-    <div className="flex h-full bg-app text-fg">
-      <aside aria-label="Projects" className="flex w-60 shrink-0 flex-col border-r border-edge bg-sidebar">
-        <div className="flex h-11 items-center gap-2 border-b border-edge px-3">
-          <span className="font-semibold">Canvas Studio</span>
+    <div className="page-type flex h-full flex-col bg-ground text-fg min-[761px]:flex-row">
+      <aside aria-label="Projects" className="flex max-h-60 w-full shrink-0 flex-col border-b border-edge bg-sidebar min-[761px]:max-h-none min-[761px]:w-60 min-[761px]:border-r min-[761px]:border-b-0">
+        <div className="flex h-16 items-center gap-2 border-b border-edge px-4">
+          <span className="font-display text-[17px] font-bold">Canvas Studio</span>
         </div>
         <nav className="flex-1 overflow-y-auto p-2">
           <SideItem active={view === 'recent'} icon={<Clock size={14} />} onClick={() => { setView('recent'); setFolderId(null); }}>
@@ -203,7 +204,9 @@ export function HomeRoute() {
           ))}
         </nav>
         <div className="flex items-center gap-2 border-t border-edge px-3 py-2">
-          <span className="min-w-0 flex-1 truncate" title={user.email}>{user.name}</span>
+          <button type="button" aria-label={`${user.name}, account settings`} className="min-w-0 flex-1 truncate text-left hover:underline" title={user.email} onClick={() => setDialog({ kind: 'account' })}>
+            {user.name}
+          </button>
           <button type="button" aria-label="Log out" title="Log out" onClick={() => void useAuth.getState().logout()} className="rounded p-1 text-fg-muted hover:bg-hover hover:text-fg">
             <LogOut size={14} />
           </button>
@@ -211,8 +214,8 @@ export function HomeRoute() {
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-11 shrink-0 items-center gap-2 border-b border-edge px-4">
-          <h1 className="flex min-w-0 flex-1 items-center gap-1 truncate text-[13px] font-semibold">
+        <header className="flex min-h-16 shrink-0 flex-wrap items-center gap-2 border-b border-edge bg-panel px-4 py-3 min-[761px]:px-6">
+          <h1 className="flex min-w-[12rem] flex-1 items-center gap-1 truncate text-[22px] font-bold max-[480px]:text-[19px]">
             {project ? (
               <>
                 <button type="button" className="hover:underline" onClick={() => setFolderId(null)}>{project.project.name}</button>
@@ -253,11 +256,11 @@ export function HomeRoute() {
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          {error && <p role="alert" className="mb-3 rounded border border-danger/50 bg-danger/10 px-3 py-2 text-red-200">{error}</p>}
+        <div className="min-h-0 flex-1 overflow-y-auto bg-app p-4 min-[761px]:p-6">
+          {error && <p role="alert" className="mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-danger">{error}</p>}
           {pendingImport.length > 0 && targetProject && (
-            <div className="mb-4 flex items-center gap-3 rounded border border-edge bg-sidebar px-3 py-2">
-              <Upload size={15} className="text-accent" />
+            <div className="mb-6 flex items-center gap-3 rounded-panel border border-edge bg-panel px-4 py-3 shadow-card">
+              <Upload size={15} className="text-accent-fg" />
               <p className="flex-1 text-fg-muted">
                 {pendingImport.length} file{pendingImport.length === 1 ? '' : 's'} from before accounts are stored in this browser only. Import them to keep them in your account.
               </p>
@@ -268,9 +271,9 @@ export function HomeRoute() {
           )}
           {project && project.project.role === 'viewer' && <p className="mb-3 text-fg-muted">You can view this project. Ask an owner for edit access.</p>}
 
-          <ul aria-label="Files" className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
+          <ul aria-label="Files" className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 min-[1050px]:gap-6">
             {folders.map((f) => (
-              <li key={f.id} className="group flex items-center gap-2 rounded-lg border border-edge bg-sidebar p-3">
+              <li key={f.id} className="group flex items-center gap-2 rounded-panel border border-edge bg-panel p-4 shadow-card">
                 <button type="button" className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setFolderId(f.id)}>
                   <Folder size={16} className="shrink-0 text-amber-400" />
                   <span className="truncate font-medium">{f.name}</span>
@@ -292,8 +295,8 @@ export function HomeRoute() {
             {files.map((f) => {
               const editable = project ? canEdit : f.role !== 'viewer';
               return (
-                <li key={f.id} className="group flex flex-col rounded-lg border border-edge bg-sidebar">
-                  <button type="button" aria-label={`Open ${f.name}`} onClick={() => navigate(`/file/${f.id}`)} className="flex h-24 items-center justify-center rounded-t-lg bg-canvas text-fg-subtle hover:bg-hover">
+                <li key={f.id} className="group flex flex-col overflow-hidden rounded-panel border border-edge bg-panel shadow-card">
+                  <button type="button" aria-label={`Open ${f.name}`} onClick={() => navigate(`/file/${f.id}`)} className="flex h-28 items-center justify-center border-b border-edge bg-canvas text-fg-subtle transition-colors duration-[160ms] ease-out hover:text-accent-fg">
                     <File size={26} />
                   </button>
                   <div className="flex items-center gap-1 px-3 py-2">
@@ -328,7 +331,7 @@ export function HomeRoute() {
               </button>
               <button
                 type="button"
-                className={`${secondaryButton} text-red-300`}
+                className={`${secondaryButton} text-danger`}
                 onClick={() =>
                   setDialog({
                     kind: 'confirm',
@@ -352,6 +355,7 @@ export function HomeRoute() {
       {dialog?.kind === 'name' && <NameDialog {...dialog} onClose={() => setDialog(null)} after={reload} />}
       {dialog?.kind === 'confirm' && <ConfirmDialog {...dialog} onClose={() => setDialog(null)} after={reload} />}
       {dialog?.kind === 'move' && <MoveDialog file={dialog.file} projects={projects.filter((p) => p.role !== 'viewer')} onClose={() => setDialog(null)} after={reload} />}
+      {dialog?.kind === 'account' && <AccountDialog email={user.email} onClose={() => setDialog(null)} />}
       {dialog?.kind === 'share' && project && <ShareDialog detail={project} me={user.id} onClose={() => setDialog(null)} after={reload} />}
     </div>
   );
@@ -527,6 +531,47 @@ function ShareDialog({ detail, me, onClose, after }: { detail: ProjectDetail; me
         ))}
       </ul>
       <p className="mt-4 text-2xs text-fg-subtle">Viewers can open and present files. Editors can change them. Owners also manage members and can delete the project.</p>
+    </Modal>
+  );
+}
+
+/** Your data: download it, or delete the account. */
+function AccountDialog({ email, onClose }: { email: string; onClose: () => void }) {
+  const [password, setPassword] = useState('');
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const remove = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await api('DELETE', '/account', { password });
+      useAuth.setState({ status: 'signed-out', user: null, error: 'Your account was deleted.' });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not delete the account');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Modal title="Account" onClose={onClose}>
+      <p className="text-fg-muted">Signed in as {email}.</p>
+      <h3 className="mt-4 font-semibold">Your data</h3>
+      <p className="mt-1 text-fg-muted">Download your profile, projects, the files you own, your comments and access tokens as JSON.</p>
+      <a href="/api/account/export" download className={`${secondaryButton} mt-2 inline-block`}>Download my data</a>
+      <h3 className="mt-5 font-semibold text-danger">Delete account</h3>
+      <p className="mt-1 text-fg-muted">
+        Deletes your account, sign-ins and tokens, and every project only you belong to (with its files, versions and images). Projects with other owners stay with them. This cannot be undone.
+      </p>
+      {!confirming ? (
+        <button type="button" className={`${secondaryButton} mt-2 text-danger`} onClick={() => setConfirming(true)}>Delete my account…</button>
+      ) : (
+        <form className="mt-2 space-y-2" onSubmit={(e) => { e.preventDefault(); void remove(); }}>
+          <input aria-label="Current password" type="password" required autoComplete="current-password" placeholder="Your password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} />
+          {error && <p role="alert" className="text-danger">{error}</p>}
+          <button type="submit" disabled={busy || !password} className={`${primaryButton} bg-red-600 hover:bg-red-500`}>Permanently delete account</button>
+        </form>
+      )}
     </Modal>
   );
 }

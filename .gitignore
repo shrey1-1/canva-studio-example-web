@@ -17,3 +17,7 @@ uploads/
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# browser test output
+test-results/
+playwright-report/

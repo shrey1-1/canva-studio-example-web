@@ -1,6 +1,8 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { ErrorBoundary } from '../app/ErrorBoundary';
 import { documentRepository, useOpenFile } from '../persistence/serverRepository';
+import { startCollab, useCollab } from '../collab/collabClient';
+import { PeerAvatars } from '../collab/PresenceLayer';
 import { useAutosave, type SaveStatus } from '../persistence/useAutosave';
 import { selectActivePage, useEditor } from '../state/editorStore';
 import { CanvasView } from './canvas/CanvasView';
@@ -11,7 +13,8 @@ import { SecondaryPanel } from './panels/SecondaryPanel';
 import { useClipboardEvents, useEditorShortcuts } from './shortcuts/useEditorShortcuts';
 import { ContextMenu } from './ContextMenu';
 import { Toasts } from './Toasts';
-import { ToolDialogs } from './plugins/ToolDialogs';
+// Tool dialogs (built-in tools, sandbox, players) load on first use.
+const ToolDialogs = lazy(() => import('./plugins/ToolDialogs').then((m) => ({ default: m.ToolDialogs })));
 
 const STATUS_TEXT: Record<SaveStatus, string> = {
   saved: 'Saved',
@@ -27,6 +30,12 @@ export function EditorLayout() {
   const docName = useEditor((s) => s.doc.name);
   const pageName = useEditor((s) => selectActivePage(s).name);
   const viewOnly = useOpenFile((s) => s.role === 'viewer');
+  const fileId = useOpenFile((s) => s.id);
+  const live = useCollab((s) => s.status);
+  const syncing = useCollab((s) => s.syncing);
+
+  useEffect(() => (fileId ? startCollab(fileId) : undefined), [fileId]);
+  const liveText = live === 'live' ? (syncing ? 'Saving…' : 'Saved') : live === 'reconnecting' ? 'Offline — reconnecting…' : live === 'closed' ? 'Disconnected' : null;
 
   useEffect(() => {
     document.title = `${docName} – Canvas Studio`;
@@ -47,9 +56,9 @@ export function EditorLayout() {
           <span
             role="status"
             title={error ?? undefined}
-            className={`rounded px-2 py-1 ${status === 'error' ? 'bg-danger/20 text-red-300' : 'bg-sidebar/90 text-fg-subtle'}`}
+            className={`rounded px-2 py-1 ${status === 'error' ? 'bg-red-50 text-danger' : 'bg-sidebar/90 text-fg-subtle'}`}
           >
-            {viewOnly ? 'View only' : STATUS_TEXT[status]}
+            {viewOnly ? 'View only' : (liveText ?? STATUS_TEXT[status])}
             {status === 'error' && error ? ` — ${error}` : ''}
           </span>
           {status === 'error' && error?.startsWith('Someone else saved') && (
@@ -58,11 +67,14 @@ export function EditorLayout() {
             </button>
           )}
         </div>
+        <PeerAvatars />
         <Toolbar />
       </main>
       <Inspector />
       <ContextMenu />
-      <ToolDialogs />
+      <Suspense fallback={null}>
+        <ToolDialogs />
+      </Suspense>
       <Toasts />
     </div>
   );

@@ -19,11 +19,14 @@ const TOOL_KEYS: Record<string, CanvasTool> = {
 };
 
 /** Event the toolbar listens for to open its image file picker. */
+import { useCommentsUi } from '../../collab/CommentsLayer';
+
 export const PLACE_IMAGE_EVENT = 'canvas-studio:place-image';
 
 export const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: 'V / H / F / R / O / L / Shift+L / P / T', action: 'Move, Hand, Frame, Rectangle, Ellipse, Line, Arrow, Pen, Text' },
   { keys: 'Ctrl + Shift + K', action: 'Place image' },
+  { keys: 'C', action: 'Add a comment' },
   { keys: 'Space + drag', action: 'Pan' },
   { keys: 'Ctrl + scroll', action: 'Zoom at pointer' },
   { keys: 'Ctrl + = / Ctrl + -', action: 'Zoom in / out' },
@@ -120,8 +123,16 @@ export function useEditorShortcuts(saveNow: () => void) {
         );
         return;
       }
+      if (key === 'c' && !e.shiftKey) {
+        const comments = useCommentsUi.getState();
+        comments.setPlacing(!comments.placing);
+        return;
+      }
       const tool = !e.shiftKey ? TOOL_KEYS[key] : undefined;
-      if (tool) editor.setTool(tool);
+      if (tool) {
+        useCommentsUi.getState().setPlacing(false);
+        editor.setTool(tool);
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);

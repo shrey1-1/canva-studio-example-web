@@ -20,7 +20,7 @@ import { useEditor } from '../../state/editorStore';
 import { IconButton } from '../../ui/IconButton';
 import { InlineEdit } from '../../ui/InlineEdit';
 import { ColorField } from '../inspector/fields';
-import { PanelHeader } from './UpcomingPanel';
+import { PanelHeader } from './PanelHeader';
 
 const TYPE_ICON: Record<VariableType, typeof Hash> = { color: Palette, number: Hash, string: CaseSensitive, boolean: ToggleLeft };
 const TYPE_LABEL: Record<VariableType, string> = { color: 'Colour', number: 'Number', string: 'String', boolean: 'Boolean' };

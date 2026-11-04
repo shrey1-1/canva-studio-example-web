@@ -3,7 +3,7 @@ import { addPage, deletePage, renameDocument, renamePage } from '@canvas-studio/
 import { useEditor } from '../../state/editorStore';
 import { IconButton } from '../../ui/IconButton';
 import { InlineEdit } from '../../ui/InlineEdit';
-import { PanelHeader } from './UpcomingPanel';
+import { PanelHeader } from './PanelHeader';
 import { LayersSection } from './LayersSection';
 import { VersionsSection } from './VersionsSection';
 

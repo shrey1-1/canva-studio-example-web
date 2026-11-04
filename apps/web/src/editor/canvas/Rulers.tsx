@@ -28,9 +28,9 @@ function RulerCanvas({ orientation, viewport, length }: { orientation: 'horizont
     canvas.height = h * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    ctx.fillStyle = '#252525';
+    ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = '#383838';
+    ctx.strokeStyle = '#DDE0E6';
     ctx.beginPath();
     if (horizontal) {
       ctx.moveTo(0, h - 0.5);
@@ -42,8 +42,8 @@ function RulerCanvas({ orientation, viewport, length }: { orientation: 'horizont
     ctx.stroke();
 
     const offset = horizontal ? viewport.x : viewport.y;
-    ctx.fillStyle = '#71717A';
-    ctx.strokeStyle = '#52525B';
+    ctx.fillStyle = '#5F6673';
+    ctx.strokeStyle = '#B7BCC6';
     ctx.font = '10px Inter, system-ui, sans-serif';
     ctx.beginPath();
     for (const value of rulerTicks(offset, viewport.zoom, length, 60)) {

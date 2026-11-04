@@ -15,7 +15,6 @@ interface UiState {
   snapToGrid: boolean;
   /** Snap moving layers to other layers' edges and centres, showing guide lines. */
   smartGuides: boolean;
-  profileName: string;
   toolQuery: ToolQuery;
   installedTools: string[];
   toolUsage: Record<string, number>;
@@ -27,7 +26,6 @@ interface UiState {
   toggleRulers: () => void;
   toggleSnap: () => void;
   toggleSmartGuides: () => void;
-  setProfileName: (name: string) => void;
   setToolQuery: (patch: Partial<ToolQuery>) => void;
   setToolInstalled: (id: string, installed: boolean) => void;
   /** Counts a successful run (drives the "Popular" sort). */
@@ -45,7 +43,6 @@ export const useUi = create<UiState>()(
       showRulers: true,
       snapToGrid: false,
       smartGuides: true,
-      profileName: 'You',
       toolQuery: DEFAULT_TOOL_QUERY,
       installedTools: [],
       toolUsage: {},
@@ -57,7 +54,6 @@ export const useUi = create<UiState>()(
       toggleRulers: () => set((s) => ({ showRulers: !s.showRulers })),
       toggleSnap: () => set((s) => ({ snapToGrid: !s.snapToGrid })),
       toggleSmartGuides: () => set((s) => ({ smartGuides: !s.smartGuides })),
-      setProfileName: (name) => set({ profileName: name.trim() || 'You' }),
       setToolQuery: (patch) => set((s) => ({ toolQuery: { ...s.toolQuery, ...patch } })),
       recordToolRun: (id) => set((s) => ({ toolUsage: { ...s.toolUsage, [id]: (s.toolUsage[id] ?? 0) + 1 } })),
       setToolInstalled: (id, installed) =>

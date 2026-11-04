@@ -24,8 +24,9 @@ export const projectRoutes: FastifyPluginAsync<{ db: Db }> = async (app, { db })
       `select p.id, p.name, m.role, p.updated_at as "updatedAt",
          (select count(*)::int from files f where f.project_id = p.id) as "fileCount"
        from projects p join project_members m on m.project_id = p.id and m.user_id = $1
+       where $2::uuid is null or p.id = $2
        order by p.created_at`,
-      [user.id],
+      [user.id, user.token?.projectId ?? null],
     );
     return { projects: rows };
   });

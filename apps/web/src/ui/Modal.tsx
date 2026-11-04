@@ -29,10 +29,10 @@ export function Modal({
     return () => window.removeEventListener('keydown', onKey, true);
   }, [onClose, escapeDisabled]);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className={`flex max-h-full w-full flex-col rounded-lg border border-edge bg-sidebar shadow-2xl ${wide ? 'max-w-3xl' : 'max-w-md'}`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-field/40 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className={`flex max-h-full w-full flex-col rounded-panel border border-edge bg-panel shadow-card ${wide ? 'max-w-3xl' : 'max-w-md'}`}>
         <div className="flex items-center justify-between border-b border-edge px-4 py-3">
-          <h2 className="text-[13px] font-semibold">{title}</h2>
+          <h2 className="text-[15px] font-semibold">{title}</h2>
           <button type="button" aria-label="Close" onClick={onClose} className="rounded p-1 text-fg-muted hover:bg-hover hover:text-fg">
             <X size={14} />
           </button>
@@ -43,6 +43,6 @@ export function Modal({
   );
 }
 
-export const inputClass = 'h-8 w-full rounded border border-edge bg-app px-2 text-fg outline-none focus:border-accent';
-export const primaryButton = 'rounded bg-accent px-3 py-1.5 font-medium text-white hover:bg-accent-hover disabled:opacity-50';
-export const secondaryButton = 'rounded border border-edge px-3 py-1.5 hover:bg-hover disabled:opacity-50';
+export const inputClass = 'h-9 w-full rounded-md border border-edge bg-panel px-2.5 text-fg outline-none focus:border-accent';
+export const primaryButton = 'btn rounded-md bg-accent px-3.5 py-2 font-medium text-white hover:bg-accent-hover disabled:opacity-50';
+export const secondaryButton = 'btn rounded-md border border-edge bg-panel px-3.5 py-2 text-fg hover:bg-ground disabled:opacity-50';

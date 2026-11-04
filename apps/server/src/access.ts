@@ -21,6 +21,8 @@ export function requireUser(user: SessionUser | null): SessionUser {
  * other people's projects cannot be probed.
  */
 export async function requireProject(db: Queryable, user: SessionUser, projectId: string, min: Role): Promise<Role> {
+  // A token limited to one project cannot see any other.
+  if (user.token?.projectId && user.token.projectId !== projectId) throw new HttpError(404, 'Project not found.');
   const { rows } = await db.query<{ role: Role }>('select role from project_members where project_id = $1 and user_id = $2', [projectId, user.id]);
   const role = rows[0]?.role;
   if (!role) throw new HttpError(404, 'Project not found.');

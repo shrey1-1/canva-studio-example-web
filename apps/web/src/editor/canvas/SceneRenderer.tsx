@@ -156,7 +156,7 @@ function NodeContent({
               text={label}
               y={-16 / zoom}
               fontSize={11 / zoom}
-              fill={isComponentish ? COMPONENT_COLOR : '#A1A1AA'}
+              fill={isComponentish ? COMPONENT_COLOR : '#6B7280'}
               listening={listening}
               perfectDrawEnabled={false}
             />

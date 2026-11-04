@@ -13,7 +13,7 @@ import {
   DocumentError,
   instanceAncestor,
   isContainer,
-  nodeProblem,
+  safePatch,
   nodeFromSpec,
   pasteNodes,
   updateNode,
@@ -42,13 +42,6 @@ export const MAX_NODES_PER_RUN = 5000;
 export const MAX_IMAGES_PER_RUN = 50;
 export const MAX_VERTICES_PER_RUN = 200_000;
 export const MAX_TEXT_PER_RUN = 2_000_000;
-const MAX_PAINTS = 50;
-
-/** Fields a tool may never patch: structure, component links, variable links and asset references. */
-const PROTECTED = new Set([
-  'id', 'type', 'pageId', 'parentId', 'childIds', 'componentNodeId', 'overrides', 'componentId',
-  'bindings', 'variableModes', 'assetId', '__proto__', 'constructor', 'prototype',
-]);
 /** File types a tool may save, keyed by extension (the MIME type is derived, never taken from the tool). */
 const DOWNLOAD_TYPES: Record<string, string> = {
   svg: 'image/svg+xml',
@@ -197,15 +190,8 @@ export class ToolContext {
         const { id, ...rest } = raw as Record<string, unknown>;
         const node = typeof id === 'string' ? d.nodes[id] : undefined;
         if (!node || node.pageId !== useEditor.getState().activePageId) throw new DocumentError('Layer not found on this page');
-        // Only existing, non-protected fields; anything else is ignored.
-        const patch = clone(Object.fromEntries(Object.entries(rest).filter(([k]) => !PROTECTED.has(k) && Object.hasOwn(node, k))));
-        for (const k of ['fills', 'strokes', 'effects']) {
-          if (Array.isArray(patch[k]) && (patch[k] as unknown[]).length > MAX_PAINTS) throw new DocumentError(`At most ${MAX_PAINTS} ${k} per layer`);
-        }
-        if (typeof patch.name === 'string') patch.name = patch.name.slice(0, 200);
-        // The patched layer must still be a valid layer, or the file could not be reopened.
-        const problem = nodeProblem({ ...clone(node), ...patch });
-        if (problem) throw new DocumentError(`Invalid update (${problem.replace(/^node \S+: /, '')})`);
+        // Only existing, non-protected fields, and the result must stay a valid layer.
+        const patch = safePatch(node, rest);
         this.charge({ type: node.type, vertices: patch.vertices as unknown[] | undefined, characters: patch.characters as string | undefined });
         updateNode(d, node.id, patch as NodePatch);
       }

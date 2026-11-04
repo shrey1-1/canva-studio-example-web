@@ -71,7 +71,7 @@ export function PresentRoute() {
   }, [doc, page, size]);
 
   return (
-    <div className="flex h-full flex-col bg-[#111]">
+    <div className="flex h-full flex-col bg-field">
       <header className="flex h-10 shrink-0 items-center justify-between border-b border-edge bg-sidebar px-3 text-fg-muted">
         <span className="truncate">{doc ? doc.name : 'Presentation'}</span>
         {doc && doc.pages.length > 1 && (

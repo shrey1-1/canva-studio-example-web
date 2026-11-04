@@ -3,7 +3,7 @@
 A browser-based visual design editor: frames, shapes, layers, an inspector, a tools/plugin
 ecosystem, prototyping and (later) collaboration and AI-agent integration.
 
-**Status:** Phases 1-6 complete (foundation, core editor, design system, tools ecosystem, prototyping, backend). See [docs/PLAN.md](docs/PLAN.md) for the roadmap.
+**Status:** All 8 phases complete (foundation, core editor, design system, tools, prototyping, backend, collaboration / agents / export, hardening). See [docs/PLAN.md](docs/PLAN.md) for the roadmap.
 
 ## Requirements
 
@@ -39,6 +39,7 @@ browser.
 npm run typecheck  # TypeScript, all workspaces
 npm test           # unit + component tests (Vitest)
 npm run check      # both
+npm run e2e        # browser tests (Playwright, uses your installed Chrome; starts `npm run dev` if needed)
 ```
 
 ## Project layout
@@ -73,6 +74,9 @@ docs/            Architecture, plan, decision records (docs/adr)
 | Tools | **Tools** section: run any of the 13 built-in tools (one undo step per run). **Create** writes a custom tool; it runs in a sandbox with only the permissions you tick (see docs/adr/0004) |
 | Prototype | **Prototype** tab: pick the starting screen; select a layer and click + for an interaction (click, hover, press, drag, after delay → navigate, back, overlay, scroll to, open link) with an animation. **Present** plays it: ← back, R restart, Esc exit |
 | Files & sharing | Home screen: projects, folders, rename / move / duplicate / delete, **Share** (owner) to add people as owner, editor or viewer. In a file: **File → Version history** to save a named version or restore an older one |
+| Collaboration | Share the project, open the same file: edits, cursors and selections appear live. `C` (or the toolbar bubble) places a comment; click a pin to reply or resolve |
+| Export | Select layers → **Export** in the Design panel: PNG / JPG (0.5x–4x), SVG, PDF |
+| AI agents | **Agents** panel: create an access token and paste the shown config into an MCP client (e.g. Claude Desktop / Claude Code). Tools: list/read files, create/update/delete layers, export SVG, comments |
 | Pan | Scroll, Space+drag, middle mouse, or `H` |
 | Zoom | Ctrl+scroll, Ctrl+= / Ctrl+-, Shift+0 (100%), Shift+1 (fit) |
 | Undo / redo | Ctrl+Z / Ctrl+Shift+Z |

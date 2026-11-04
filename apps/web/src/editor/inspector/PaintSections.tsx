@@ -157,7 +157,7 @@ export function EffectsSection({ node, set }: { node: SceneNode; set: SetNode })
                       setMenuOpen(false);
                       set(`Add ${EFFECT_LABEL[t].toLowerCase()}`, { effects: [...effects, newEffect(t)] });
                     }}
-                    className="flex h-7 w-full items-center px-3 text-left text-fg hover:bg-accent"
+                    className="flex h-7 w-full items-center px-3 text-left text-fg hover:bg-accent hover:text-white"
                   >
                     {EFFECT_LABEL[t]}
                   </button>

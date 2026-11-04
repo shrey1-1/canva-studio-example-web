@@ -25,7 +25,7 @@ export function createId(): string {
 }
 
 export function createPage(name = 'Page 1'): Page {
-  return { id: createId(), name, background: '#1E1E1E', childIds: [] };
+  return { id: createId(), name, background: '#F3F4F6', childIds: [] };
 }
 
 export function createDocument(name = 'Untitled'): DesignDocument {

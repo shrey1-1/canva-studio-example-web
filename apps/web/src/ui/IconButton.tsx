@@ -22,7 +22,7 @@ export const IconButton = forwardRef<HTMLButtonElement, Props>(function IconButt
         aria-label={label}
         aria-pressed={active || undefined}
         className={`inline-flex h-7 w-7 items-center justify-center rounded text-fg-muted transition-colors hover:bg-hover hover:text-fg disabled:pointer-events-none disabled:opacity-40 ${
-          active ? 'bg-accent text-fg hover:bg-accent' : ''
+          active ? 'bg-accent text-white hover:bg-accent' : ''
         } ${className}`}
         {...rest}
       >

@@ -4,13 +4,17 @@
  */
 import Fastify, { type FastifyInstance } from 'fastify';
 import cookie from '@fastify/cookie';
-import { SESSION_COOKIE, userForSession, type SessionUser } from './auth';
+import { SESSION_COOKIE, userForSession, userForToken, type SessionUser } from './auth';
 import { HttpError } from './access';
 import type { Db } from './db';
 import { authRoutes } from './routes/auth';
 import { projectRoutes } from './routes/projects';
 import { fileRoutes } from './routes/files';
 import { assetRoutes } from './routes/assets';
+import { tokenRoutes } from './routes/tokens';
+import { commentRoutes } from './routes/comments';
+import { accountRoutes } from './routes/account';
+import type { CollabHub } from './collab';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -25,13 +29,24 @@ export interface AppOptions {
   logger?: boolean;
   /** Login/signup attempts allowed per 15 minutes per client (default 10). */
   authAttempts?: number;
+  /** Real-time rooms; HTTP writes notify it so open editors stay current. */
+  hub?: CollabHub;
 }
 
 /** Header every state-changing request must carry. Browsers cannot add it cross-site without a CORS preflight, which this server never allows, so it blocks CSRF. */
 export const CSRF_HEADER = 'x-requested-with';
 export const CSRF_VALUE = 'canvas-studio';
 
-export async function buildApp({ db, secureCookies = false, logger = false, authAttempts = 10 }: AppOptions): Promise<FastifyInstance> {
+/** What agent tokens may do: read projects/files/comments, edit files, add images and comments. Never accounts, tokens or sharing. */
+const UUID = '[0-9a-f-]{36}';
+const TOKEN_ROUTES = [
+  new RegExp(`^GET /api/(projects|files/recent|projects/${UUID}|files/${UUID}|files/${UUID}/(versions|comments)|assets/[0-9a-f]{64})$`),
+  new RegExp(`^(PUT|PATCH) /api/files/${UUID}$`),
+  new RegExp(`^POST /api/(projects/${UUID}/files|files/${UUID}/(comments|versions|duplicate))$`),
+  new RegExp(`^PUT /api/projects/${UUID}/assets/[0-9a-f]{64}$`),
+];
+
+export async function buildApp({ db, secureCookies = false, logger = false, authAttempts = 10, hub }: AppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger, bodyLimit: 1024 * 1024, trustProxy: false });
   await app.register(cookie);
 
@@ -41,6 +56,17 @@ export async function buildApp({ db, secureCookies = false, logger = false, auth
     reply.header('X-Content-Type-Options', 'nosniff');
     reply.header('Referrer-Policy', 'same-origin');
     reply.header('Cache-Control', 'no-store');
+    const bearer = /^Bearer (\S+)$/.exec(req.headers.authorization ?? '')?.[1];
+    if (bearer) {
+      // Agent tokens: no cookie is involved, so CSRF does not apply; scope limits do.
+      req.user = await userForToken(db, bearer);
+      if (!req.user) throw new HttpError(401, 'Invalid or revoked access token.');
+      const write = !['GET', 'HEAD'].includes(req.method);
+      const path = req.url.split('?')[0]!;
+      if (!TOKEN_ROUTES.some((r) => r.test(`${req.method} ${path}`))) throw new HttpError(403, 'Access tokens cannot use this endpoint.');
+      if (write && req.user.token!.scopes !== 'write') throw new HttpError(403, 'This token is read-only.');
+      return;
+    }
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers[CSRF_HEADER] !== CSRF_VALUE) {
       throw new HttpError(403, 'Missing request header.');
     }
@@ -60,8 +86,11 @@ export async function buildApp({ db, secureCookies = false, logger = false, auth
   app.get('/api/health', async () => ({ ok: true, database: db.kind }));
   await app.register(authRoutes, { db, secureCookies, authAttempts });
   await app.register(projectRoutes, { db });
-  await app.register(fileRoutes, { db });
+  await app.register(fileRoutes, { db, hub });
   await app.register(assetRoutes, { db });
+  await app.register(tokenRoutes, { db });
+  await app.register(commentRoutes, { db, hub });
+  await app.register(accountRoutes, { db });
   app.setNotFoundHandler((_req, reply) => reply.status(404).send({ error: 'Not found.' }));
   return app;
 }

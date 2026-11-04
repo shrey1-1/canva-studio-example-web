@@ -1,3 +1,4 @@
+import { ExportSection } from './ExportSection';
 import {
   AlignCenterHorizontal,
   AlignCenterVertical,
@@ -70,8 +71,12 @@ export function DesignTab() {
   const tool = useEditor((s) => s.tool);
   if (selection.length === 0 && tool === 'frame') return <FramePresets />;
   if (selection.length === 0) return <PageProperties />;
-  if (selection.length > 1) return <MultiSelection ids={selection} />;
-  return <NodeProperties id={selection[0]!} />;
+  return (
+    <>
+      {selection.length > 1 ? <MultiSelection ids={selection} /> : <NodeProperties id={selection[0]!} />}
+      <ExportSection ids={selection} />
+    </>
+  );
 }
 
 /** With the Frame tool active: click a preset to add a frame of that size. */

@@ -31,7 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <p className="max-w-sm text-fg-muted">{this.state.error.message}</p>
         <button
           type="button"
-          className="rounded bg-accent px-3 py-1.5 font-medium hover:bg-accent-hover"
+          className="btn rounded-md bg-accent px-3.5 py-2 font-medium text-white hover:bg-accent-hover"
           onClick={() => this.setState({ error: null })}
         >
           Try again
@@ -53,7 +53,7 @@ export function RouteError({ notFound = false }: { notFound?: boolean }) {
     <div className="flex h-full flex-col items-center justify-center gap-3 bg-app text-center">
       <h1 className="text-base font-semibold">{is404 ? 'Not found' : 'Something went wrong'}</h1>
       <p className="text-fg-muted">{message}</p>
-      <Link to="/" className="rounded bg-accent px-3 py-1.5 font-medium hover:bg-accent-hover">
+      <Link to="/" className="btn rounded-md bg-accent px-3.5 py-2 font-medium text-white hover:bg-accent-hover">
         Go to your files
       </Link>
     </div>

@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { Arrow, Circle, Group, Rect, RegularPolygon } from 'react-konva';
 import { nodeBounds, type DesignDocument, type NodeId, type PageId } from '@canvas-studio/core';
 
-const LINK = '#22D3EE';
+const LINK = '#0891B2';
 
 /**
  * Prototype connections drawn on the canvas while the Prototype tab is open: one curved arrow

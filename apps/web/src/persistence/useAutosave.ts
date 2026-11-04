@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { DesignDocument } from '@canvas-studio/core';
 import { useEditor } from '../state/editorStore';
 import type { DocumentRepository } from './repository';
+import { collabOwnsSaving } from '../collab/collabClient';
 
 export type SaveStatus = 'saved' | 'unsaved' | 'saving' | 'error';
 
@@ -25,6 +26,12 @@ export function useAutosave(repo: DocumentRepository) {
   const saveNow = useRef(async () => {
     window.clearTimeout(timer.current);
     const doc = useEditor.getState().doc;
+    // The live connection saves through the server room.
+    if (collabOwnsSaving()) {
+      lastSaved.current = doc;
+      setStatus('saved');
+      return;
+    }
     if (doc === lastSaved.current) {
       setStatus('saved');
       return;
