@@ -7,6 +7,7 @@
  *   SECURE_COOKIES "true" when served over HTTPS.
  *   ALLOWED_ORIGINS Extra origins allowed to open live-collaboration sockets (comma-separated).
  *   AUTH_ATTEMPTS  Sign-in/sign-up attempts per 15 minutes per client (default 10).
+ *   WEB_DIR        Built editor to serve (default ../web/dist, used when it exists).
  */
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -23,6 +24,8 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 const url = process.env.DATABASE_URL;
 const db = url ? await openPostgres(url) : await openPglite(resolve(process.env.DATA_DIR ?? 'data/db'));
 const applied = await migrate(db);
+// The built editor (npm run build); served on the same port when present.
+const webDir = resolve(process.env.WEB_DIR ?? fileURLToPath(new URL('../../web/dist', import.meta.url)));
 const hub = new CollabHub(db, (process.env.ALLOWED_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean));
 const app = await buildApp({
   db,
@@ -30,12 +33,14 @@ const app = await buildApp({
   secureCookies: process.env.SECURE_COOKIES === 'true',
   logger: true,
   authAttempts: Number(process.env.AUTH_ATTEMPTS) || undefined,
+  webDir: existsSync(webDir) ? webDir : undefined,
 });
 
 const port = Number(process.env.PORT ?? 8787);
 const host = process.env.HOST ?? '127.0.0.1';
 hub.attach(app.server);
 await app.listen({ port, host });
+if (existsSync(webDir)) app.log.info(`Canvas Studio is running at http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`);
 app.log.info(`Database: ${db.kind}${applied.length ? `, applied migrations ${applied.join(', ')}` : ''}`);
 
 // Remove images nothing refers to any more: at start-up and every 6 hours.

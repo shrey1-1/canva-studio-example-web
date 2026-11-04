@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "start": "npm run build && npm run start -w @canvas-studio/server",
     "build": "npm run build -w @canvas-studio/web",
     "preview": "npm run preview -w @canvas-studio/web",
     "test": "npm run test --workspaces --if-present",

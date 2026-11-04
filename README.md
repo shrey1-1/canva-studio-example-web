@@ -10,19 +10,26 @@ ecosystem, prototyping and (later) collaboration and AI-agent integration.
 - Node.js **22.12+** (tested on 24.11)
 - npm 10+
 
-## Setup
+## Quick start
 
-```powershell
-cd canvas-studio
+```bash
+git clone https://github.com/shrey1-1/canva-studio-example-web.git
+cd canva-studio-example-web
 npm install
+npm start
 ```
 
-## Run
+Open **http://localhost:8787**. `npm start` builds the editor and runs everything (editor, API,
+live collaboration, embedded database) as one server on one port. No database install needed.
 
-```powershell
-npm run dev        # API server (127.0.0.1:8787) + editor at http://localhost:5173
+To run it on a server or let other machines reach it, set `HOST=0.0.0.0` (and `PORT` if needed),
+put it behind HTTPS, and set `SECURE_COOKIES=true`. See `.env.example`.
+
+## Development
+
+```bash
+npm run dev        # API server (127.0.0.1:8787) + editor with hot reload at http://localhost:5173
 npm run build      # production build -> apps/web/dist
-npm run preview    # serve the production build (needs the API server: npm run dev:server)
 ```
 
 Create an account on the sign-in screen; your files live on the server from then on.

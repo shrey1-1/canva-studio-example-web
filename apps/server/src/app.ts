@@ -15,6 +15,7 @@ import { tokenRoutes } from './routes/tokens';
 import { commentRoutes } from './routes/comments';
 import { accountRoutes } from './routes/account';
 import type { CollabHub } from './collab';
+import { webHandler } from './static';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -31,6 +32,8 @@ export interface AppOptions {
   authAttempts?: number;
   /** Real-time rooms; HTTP writes notify it so open editors stay current. */
   hub?: CollabHub;
+  /** Built editor to serve on the same port (apps/web/dist). Unset = API only. */
+  webDir?: string;
 }
 
 /** Header every state-changing request must carry. Browsers cannot add it cross-site without a CORS preflight, which this server never allows, so it blocks CSRF. */
@@ -46,7 +49,7 @@ const TOKEN_ROUTES = [
   new RegExp(`^PUT /api/projects/${UUID}/assets/[0-9a-f]{64}$`),
 ];
 
-export async function buildApp({ db, secureCookies = false, logger = false, authAttempts = 10, hub }: AppOptions): Promise<FastifyInstance> {
+export async function buildApp({ db, secureCookies = false, logger = false, authAttempts = 10, hub, webDir }: AppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger, bodyLimit: 1024 * 1024, trustProxy: false });
   await app.register(cookie);
 
@@ -56,6 +59,9 @@ export async function buildApp({ db, secureCookies = false, logger = false, auth
     reply.header('X-Content-Type-Options', 'nosniff');
     reply.header('Referrer-Policy', 'same-origin');
     reply.header('Cache-Control', 'no-store');
+    // Web app files (requests no API route matched) need no user lookup. Decided by the matched
+    // route, not the raw URL, so an encoded path like /%61pi/... cannot skip these checks.
+    if (!req.routeOptions.url) return;
     const bearer = /^Bearer (\S+)$/.exec(req.headers.authorization ?? '')?.[1];
     if (bearer) {
       // Agent tokens: no cookie is involved, so CSRF does not apply; scope limits do.
@@ -91,6 +97,10 @@ export async function buildApp({ db, secureCookies = false, logger = false, auth
   await app.register(tokenRoutes, { db });
   await app.register(commentRoutes, { db, hub });
   await app.register(accountRoutes, { db });
-  app.setNotFoundHandler((_req, reply) => reply.status(404).send({ error: 'Not found.' }));
+  const web = webDir ? webHandler(webDir) : null;
+  app.setNotFoundHandler(async (req, reply) => {
+    if (web && (await web(req, reply))) return reply;
+    return reply.status(404).send({ error: 'Not found.' });
+  });
   return app;
 }
