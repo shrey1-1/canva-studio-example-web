@@ -7,6 +7,10 @@ export type SaveStatus = 'saved' | 'unsaved' | 'saving' | 'error';
 
 export const AUTOSAVE_DELAY_MS = 800;
 
+let activeSave: (() => Promise<void>) | null = null;
+/** Writes pending edits of the open file now (e.g. before saving a named version). */
+export const flushPendingSave = () => activeSave?.() ?? Promise.resolve();
+
 /**
  * Debounced autosave: waits until edits pause for AUTOSAVE_DELAY_MS before writing.
  * Also flushes on tab hide/close so pending edits aren't lost.
@@ -39,6 +43,7 @@ export function useAutosave(repo: DocumentRepository) {
   }).current;
 
   useEffect(() => {
+    activeSave = saveNow;
     // A freshly loaded document counts as saved.
     const unsubLoad = useEditor.subscribe((s, prev) => {
       if (s.doc.id !== prev.doc.id) {
@@ -61,6 +66,7 @@ export function useAutosave(repo: DocumentRepository) {
     document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
+      if (activeSave === saveNow) activeSave = null;
       unsubLoad();
       window.clearTimeout(timer.current);
       flush();

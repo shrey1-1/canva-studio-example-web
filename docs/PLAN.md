@@ -10,26 +10,29 @@ Later phases build on the `core` model and the `DocumentRepository` boundary.
 | 3. Design system | Components, instances, overrides, variants, nested components, Auto Layout (direction, padding, gap, hug/fill/fixed, min/max), constraints, responsive frame presets, Variables (collections, modes, bindings), Assets workspace | **Done** |
 | 4. Tools ecosystem | Sandboxed plugin runtime (iframe/worker + permission-checked API), Create/register custom tool, and the 13 tools: Image to Vector, Bento Grid, Phone Mockup, Auto-Slide, Flipbook, Sticker Pack, Token Exporter, Generate Mockup, Nebula, Pixel Stretch, Fractal Noise, Grainy Airbrush, Clouds | **Done** |
 | 5. Prototyping | Interactions (click/hover/drag), navigation, overlays, scroll, transitions, preview engine | **Done** |
-| 6. Backend | Node server (Fastify), PostgreSQL (approved), auth & sessions, roles, file/project/folder management, server autosave, version history, asset storage | Next |
-| 7. Integrations | Real-time collaboration (WebSockets via `ws` (approved), presence, comments, conflict handling), MCP server (official SDK, approved) for agents with permission scopes, Agents workspace, advanced export (PNG/JPG/SVG/PDF) | |
+| 6. Backend | Node server (Fastify), PostgreSQL (approved), auth & sessions, roles, file/project/folder management, server autosave, version history, asset storage | **Done** |
+| 7. Integrations | Real-time collaboration (WebSockets via `ws` (approved), presence, comments, conflict handling), MCP server (official SDK, approved) for agents with permission scopes, Agents workspace, advanced export (PNG/JPG/SVG/PDF) | Next |
 | 8. Hardening | Performance (large documents, code-splitting), integration/E2E suites, accessibility pass, bug fixing | |
 
-## Known limitations (after Phase 5)
+## Known limitations (after Phase 6)
 
 - The Agents section shows an honest "planned" state (Phase 7).
 - Prototyping: no Smart Animate (matching layers between screens), no keyboard/gamepad triggers,
   no fixed-position (sticky) layers while scrolling, and no device frames around the preview.
   Links inside a copied screen still point at the original screens.
 - Tools:
-  - Custom tools are stored in this browser only; they cannot yet be shared or published (Phase 6/7).
+  - Custom tools are stored in this browser only; they cannot yet be shared or published (Phase 7).
   - Sandbox network blocking is tested in Chrome (`fetch`); other request types and other browsers
     are not covered by automated tests yet (Phase 8). See ADR 0004.
   - Generative tools (Nebula, Clouds, Fractal Noise, Airbrush, Mockups) are procedural and run
     locally; no AI service is connected.
-- Accounts are a local display name only (Phase 6).
-- Images live in this browser's IndexedDB. A file opened in another browser shows "Image not
-  available" placeholders until server asset storage arrives (Phase 6). Unused images are not
-  garbage-collected yet.
+- Accounts and server:
+  - Email + password only: no email verification, password reset or OAuth sign-in yet. Sharing
+    needs the other person to have an account already.
+  - Two people editing the same file at once: the second save is refused with "Someone else saved
+    a newer version — Reload" (no merging until real-time collaboration in Phase 7).
+  - The sign-in rate limit is kept in memory, which is fine for one server process.
+  - Images that are no longer used by any file are not deleted from the database yet.
 - Vector paths are drawn with the pen tool; editing individual points after creation is not
   implemented yet (planned for Phase 8).
 - Image crop is set numerically in the inspector (left/top/width/height %); there are no on-canvas

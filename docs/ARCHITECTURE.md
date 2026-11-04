@@ -165,11 +165,37 @@ node count) before use. Pasting image files or plain text creates image or text 
   transitions with the Web Animations API (respecting reduced motion) and handles hover/press
   reverting. The canvas draws links while the Prototype tab is open (`PrototypeConnections`).
 
+## Server (Phase 6)
+
+- `apps/server`: Fastify API under `/api`, with JSON-schema validation on every route. The web dev
+  server proxies `/api` to it.
+- Database: one small `Db` interface over `pg` (when `DATABASE_URL` is set) or embedded PGlite.
+  Migrations live in `migrations.ts` and run at start-up. Tables: users, sessions, projects,
+  project_members, folders, files, file_versions, assets. See ADR 0005.
+- Auth:
+  - scrypt password hashes.
+  - Random session tokens in an httpOnly SameSite=Lax cookie; only their SHA-256 is stored.
+  - Every non-GET request needs an `X-Requested-With: canvas-studio` header (CSRF).
+  - Login/sign-up attempts are rate-limited.
+- Access: roles per project (owner / editor / viewer), checked in `access.ts`. Non-members get
+  404, so ids cannot be probed.
+- Files:
+  - The document JSON is validated with the core `migrateDocument` on every write.
+  - Saves carry `baseRevision`; a stale save gets 409.
+  - An automatic version is kept at most every 10 minutes (the last 50 are kept), plus named
+    versions. Restoring keeps the current state as a version first.
+- Images: stored per project, keyed by SHA-256. The server checks the hash and the real file type
+  (PNG/JPEG/GIF/WebP). Downloads are limited to project members.
+- Web side:
+  - `ServerDocumentRepository` and `ServerAssetStore` implement the existing storage interfaces.
+  - `AuthGate` wraps all routes.
+  - Viewers get a read-only editor (`editorStore.readOnly`).
+
 ## Routes
 
 | Path | Screen |
 |---|---|
-| `/` | Opens most recent file or creates one |
+| `/` | File browser (recent files, projects, folders, sharing) |
 | `/file/:docId` | Editor |
 | `/file/:docId/present` | Presentation mode |
 

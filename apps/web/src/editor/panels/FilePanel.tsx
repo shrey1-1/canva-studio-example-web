@@ -5,6 +5,7 @@ import { IconButton } from '../../ui/IconButton';
 import { InlineEdit } from '../../ui/InlineEdit';
 import { PanelHeader } from './UpcomingPanel';
 import { LayersSection } from './LayersSection';
+import { VersionsSection } from './VersionsSection';
 
 export function FilePanel() {
   const docName = useEditor((s) => s.doc.name);
@@ -22,6 +23,7 @@ export function FilePanel() {
         />
       </div>
       <PagesSection />
+      <VersionsSection />
       <LayersSection />
     </>
   );

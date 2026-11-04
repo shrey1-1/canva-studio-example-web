@@ -3,7 +3,7 @@
 A browser-based visual design editor: frames, shapes, layers, an inspector, a tools/plugin
 ecosystem, prototyping and (later) collaboration and AI-agent integration.
 
-**Status:** Phases 1-5 complete (foundation, core editor, design system, tools ecosystem, prototyping). See [docs/PLAN.md](docs/PLAN.md) for the roadmap.
+**Status:** Phases 1-6 complete (foundation, core editor, design system, tools ecosystem, prototyping, backend). See [docs/PLAN.md](docs/PLAN.md) for the roadmap.
 
 ## Requirements
 
@@ -20,10 +20,18 @@ npm install
 ## Run
 
 ```powershell
-npm run dev        # editor at http://localhost:5173
+npm run dev        # API server (127.0.0.1:8787) + editor at http://localhost:5173
 npm run build      # production build -> apps/web/dist
-npm run preview    # serve the production build
+npm run preview    # serve the production build (needs the API server: npm run dev:server)
 ```
+
+Create an account on the sign-in screen; your files live on the server from then on.
+
+**Database:** by default the server uses embedded PostgreSQL (PGlite), stored in
+`apps/server/data/db` (gitignored); nothing to install. To use a real PostgreSQL server, copy
+`.env.example` to `.env` and set `DATABASE_URL`. Migrations run automatically at start-up.
+Files made before accounts existed stay in the browser until you click **Import** in the file
+browser.
 
 ## Quality checks
 
@@ -38,6 +46,7 @@ npm run check      # both
 ```
 packages/core/   Framework-independent document model, operations, viewport math, tool catalog
 apps/web/        React editor (Vite, Tailwind, Zustand, Konva)
+apps/server/     API server (Fastify, PostgreSQL / PGlite): accounts, projects, files, versions, images
 docs/            Architecture, plan, decision records (docs/adr)
 ```
 
@@ -63,6 +72,7 @@ docs/            Architecture, plan, decision records (docs/adr)
 | Variables | **Variables** section: collections, modes, values. Bind from the Design panel's *Variables* section; choose a frame's mode under *Variable modes* |
 | Tools | **Tools** section: run any of the 13 built-in tools (one undo step per run). **Create** writes a custom tool; it runs in a sandbox with only the permissions you tick (see docs/adr/0004) |
 | Prototype | **Prototype** tab: pick the starting screen; select a layer and click + for an interaction (click, hover, press, drag, after delay → navigate, back, overlay, scroll to, open link) with an animation. **Present** plays it: ← back, R restart, Esc exit |
+| Files & sharing | Home screen: projects, folders, rename / move / duplicate / delete, **Share** (owner) to add people as owner, editor or viewer. In a file: **File → Version history** to save a named version or restore an older one |
 | Pan | Scroll, Space+drag, middle mouse, or `H` |
 | Zoom | Ctrl+scroll, Ctrl+= / Ctrl+-, Shift+0 (100%), Shift+1 (fit) |
 | Undo / redo | Ctrl+Z / Ctrl+Shift+Z |

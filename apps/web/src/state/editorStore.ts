@@ -48,6 +48,9 @@ interface EditorState {
   loadDocument: (doc: DesignDocument) => void;
   /** Applies a document change as one undoable step. */
   dispatch: (label: string, recipe: (draft: DesignDocument) => void, options?: CommitOptions) => void;
+  /** Viewers can look around (select, zoom, present) but not change the document. */
+  readOnly: boolean;
+  setReadOnly: (readOnly: boolean) => void;
   undo: () => void;
   redo: () => void;
   setActivePage: (pageId: PageId) => void;
@@ -97,7 +100,11 @@ export const useEditor = create<EditorState>()((set, get) => ({
       fitRequest: s.fitRequest + 1,
     })),
 
+  readOnly: false,
+  setReadOnly: (readOnly) => set({ readOnly }),
+
   dispatch: (label, recipe, options) => {
+    if (get().readOnly) return;
     const { doc, history, activePageId, selection } = get();
     const result = commit(
       doc,
@@ -120,6 +127,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
   },
 
   undo: () => {
+    if (get().readOnly) return;
     const { doc, history, activePageId, selection } = get();
     const result = undoHistory(doc, history);
     if (!result) return;
@@ -128,6 +136,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
   },
 
   redo: () => {
+    if (get().readOnly) return;
     const { doc, history, activePageId, selection } = get();
     const result = redoHistory(doc, history);
     if (!result) return;

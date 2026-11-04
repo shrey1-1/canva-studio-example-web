@@ -3,11 +3,13 @@ import { ChevronLeft, ChevronRight, Copy, Download, Pause, Play, ShieldCheck, X 
 import type { PluginPermission, ToolCategory } from '@canvas-studio/core';
 import { useCustomTools, MAX_TOOL_CODE } from '../../state/customToolsStore';
 import { useUi } from '../../state/uiStore';
+import { useAuth } from '../../state/authStore';
 import { toolIcon } from '../toolIcons';
 import { BUILTIN_TOOLS, defaultValues, type ParamValue, type ToolParam, type ToolResult } from './builtinTools';
 import { downloadFile } from './imageIO';
 import { findManifest, runTool, useToolUi } from './runTool';
 import { CUSTOM_TOOL_TEMPLATE } from './sandbox';
+import { Modal as BaseModal } from '../../ui/Modal';
 
 export const PERMISSION_TEXT: Record<PluginPermission, string> = {
   'read-selection': 'Read the selected layers',
@@ -18,33 +20,11 @@ export const PERMISSION_TEXT: Record<PluginPermission, string> = {
   export: 'Save files to your computer',
 };
 
-function Modal({ title, onClose, children, wide = false }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    ref.current?.querySelector<HTMLElement>('input, select, textarea, button:not([aria-label="Close"])')?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      // While the player is open on top, Escape belongs to it.
-      if (e.key === 'Escape' && !useToolUi.getState().player) {
-        e.stopImmediatePropagation();
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
-  }, [onClose]);
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className={`flex max-h-full w-full flex-col rounded-lg border border-edge bg-sidebar shadow-2xl ${wide ? 'max-w-3xl' : 'max-w-md'}`}>
-        <div className="flex items-center justify-between border-b border-edge px-4 py-3">
-          <h2 className="text-[13px] font-semibold">{title}</h2>
-          <button type="button" aria-label="Close" onClick={onClose} className="rounded p-1 text-fg-muted hover:bg-hover hover:text-fg">
-            <X size={14} />
-          </button>
-        </div>
-        <div className="min-h-0 overflow-y-auto p-4">{children}</div>
-      </div>
-    </div>
-  );
+// While the player is open on top, Escape belongs to it.
+const playerOpen = () => !!useToolUi.getState().player;
+
+function Modal(props: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
+  return <BaseModal {...props} escapeDisabled={playerOpen} />;
 }
 
 function ParamField({ param, value, onChange }: { param: ToolParam; value: ParamValue; onChange: (v: ParamValue) => void }) {
@@ -226,7 +206,7 @@ export function CustomToolEditor({ toolId }: { toolId: string | null }) {
   const existing = useCustomTools((s) => s.tools.find((t) => t.manifest.id === toolId));
   const save = useCustomTools((s) => s.save);
   const remove = useCustomTools((s) => s.remove);
-  const profile = useUi((s) => s.profileName);
+  const profile = useAuth((s) => s.user?.name ?? 'You');
   const [name, setName] = useState(existing?.manifest.name ?? '');
   const [description, setDescription] = useState(existing?.manifest.description ?? '');
   const [category, setCategory] = useState<ToolCategory>(existing?.manifest.category ?? 'Graphics');

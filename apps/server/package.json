@@ -1,0 +1,24 @@
+{
+  "name": "@canvas-studio/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Canvas Studio API: accounts, projects, files, versions and assets (Fastify + PostgreSQL).",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
+    "tsx": "^4.23.15"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.15",
+    "@fastify/cookie": "^11.1.5",
+    "fastify": "^5.12.8",
+    "pg": "^8.23.1"
+  }
+}

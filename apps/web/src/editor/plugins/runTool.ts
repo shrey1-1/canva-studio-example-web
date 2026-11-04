@@ -46,6 +46,7 @@ export function findManifest(id: string): ToolManifest | undefined {
 export async function runTool(id: string, values: Record<string, ParamValue>, signal?: AbortSignal): Promise<ToolResult> {
   const manifest = findManifest(id);
   if (!manifest) throw new Error('This tool is not available.');
+  if (useEditor.getState().readOnly) throw new Error('This file is view only, so tools cannot change it.');
   const ctx = new ToolContext(manifest);
   let result: ToolResult;
   try {

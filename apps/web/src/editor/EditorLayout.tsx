@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { ErrorBoundary } from '../app/ErrorBoundary';
-import { documentRepository } from '../persistence/localRepository';
+import { documentRepository, useOpenFile } from '../persistence/serverRepository';
 import { useAutosave, type SaveStatus } from '../persistence/useAutosave';
 import { selectActivePage, useEditor } from '../state/editorStore';
 import { CanvasView } from './canvas/CanvasView';
@@ -26,6 +26,7 @@ export function EditorLayout() {
   useClipboardEvents();
   const docName = useEditor((s) => s.doc.name);
   const pageName = useEditor((s) => selectActivePage(s).name);
+  const viewOnly = useOpenFile((s) => s.role === 'viewer');
 
   useEffect(() => {
     document.title = `${docName} – Canvas Studio`;
@@ -48,9 +49,14 @@ export function EditorLayout() {
             title={error ?? undefined}
             className={`rounded px-2 py-1 ${status === 'error' ? 'bg-danger/20 text-red-300' : 'bg-sidebar/90 text-fg-subtle'}`}
           >
-            {STATUS_TEXT[status]}
+            {viewOnly ? 'View only' : STATUS_TEXT[status]}
             {status === 'error' && error ? ` — ${error}` : ''}
           </span>
+          {status === 'error' && error?.startsWith('Someone else saved') && (
+            <button type="button" onClick={() => window.location.reload()} className="pointer-events-auto rounded bg-accent px-2 py-1 text-white">
+              Reload
+            </button>
+          )}
         </div>
         <Toolbar />
       </main>

@@ -1,23 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { useUi } from '../../state/uiStore';
+import { Link } from 'react-router';
+import { ChevronDown, LogOut } from 'lucide-react';
+import { useAuth } from '../../state/authStore';
 import { SHORTCUTS } from '../shortcuts/useEditorShortcuts';
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join('') || 'Y';
 }
 
-/** Local profile menu. Real accounts and sign-in arrive with the backend (phase 6). */
+/** Account menu: who is signed in, a way back to the file browser, sign out, and shortcuts. */
 export function AccountMenu() {
-  const name = useUi((s) => s.profileName);
-  const setName = useUi((s) => s.setProfileName);
+  const user = useAuth((s) => s.user);
+  const name = user?.name ?? 'You';
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState(name);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    setDraft(name);
     const onDown = (e: MouseEvent) => !rootRef.current?.contains(e.target as Node) && setOpen(false);
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     document.addEventListener('mousedown', onDown);
@@ -26,7 +25,7 @@ export function AccountMenu() {
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('keydown', onKey);
     };
-  }, [open, name]);
+  }, [open]);
 
   return (
     <div ref={rootRef} className="relative">
@@ -45,19 +44,14 @@ export function AccountMenu() {
       </button>
       {open && (
         <div role="dialog" aria-label="Account" className="absolute top-full left-0 z-50 mt-1 w-72 rounded-lg border border-edge bg-sidebar p-3 shadow-2xl">
-          <label className="block text-2xs text-fg-muted">
-            Display name
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onBlur={() => setName(draft)}
-              onKeyDown={(e) => e.key === 'Enter' && setName(draft)}
-              className="mt-1 h-7 w-full rounded border border-edge bg-app px-2 text-xs text-fg outline-none focus:border-accent"
-            />
-          </label>
-          <p className="mt-2 text-2xs text-fg-subtle">
-            Local profile stored in this browser. Accounts, sign-in and sharing arrive in phase 6.
-          </p>
+          <p className="truncate text-xs font-medium text-fg">{name}</p>
+          <p className="truncate text-2xs text-fg-subtle">{user?.email}</p>
+          <div className="mt-2 flex gap-2">
+            <Link to="/" className="flex-1 rounded border border-edge px-2 py-1 text-center text-2xs hover:bg-hover">All files</Link>
+            <button type="button" onClick={() => void useAuth.getState().logout()} className="flex flex-1 items-center justify-center gap-1 rounded border border-edge px-2 py-1 text-2xs hover:bg-hover">
+              <LogOut size={11} /> Log out
+            </button>
+          </div>
           <h4 className="mt-3 mb-1 text-2xs font-semibold text-fg">Keyboard shortcuts</h4>
           <dl className="max-h-48 space-y-1 overflow-y-auto text-2xs">
             {SHORTCUTS.map((s) => (

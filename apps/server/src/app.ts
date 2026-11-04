@@ -1,0 +1,67 @@
+/**
+ * The HTTP API (all routes under /api). Built as a function so tests can run it against an
+ * in-memory database with `app.inject`.
+ */
+import Fastify, { type FastifyInstance } from 'fastify';
+import cookie from '@fastify/cookie';
+import { SESSION_COOKIE, userForSession, type SessionUser } from './auth';
+import { HttpError } from './access';
+import type { Db } from './db';
+import { authRoutes } from './routes/auth';
+import { projectRoutes } from './routes/projects';
+import { fileRoutes } from './routes/files';
+import { assetRoutes } from './routes/assets';
+
+declare module 'fastify' {
+  interface FastifyRequest {
+    user: SessionUser | null;
+  }
+}
+
+export interface AppOptions {
+  db: Db;
+  /** Mark the session cookie Secure (on when served over HTTPS). */
+  secureCookies?: boolean;
+  logger?: boolean;
+  /** Login/signup attempts allowed per 15 minutes per client (default 10). */
+  authAttempts?: number;
+}
+
+/** Header every state-changing request must carry. Browsers cannot add it cross-site without a CORS preflight, which this server never allows, so it blocks CSRF. */
+export const CSRF_HEADER = 'x-requested-with';
+export const CSRF_VALUE = 'canvas-studio';
+
+export async function buildApp({ db, secureCookies = false, logger = false, authAttempts = 10 }: AppOptions): Promise<FastifyInstance> {
+  const app = Fastify({ logger, bodyLimit: 1024 * 1024, trustProxy: false });
+  await app.register(cookie);
+
+  app.decorateRequest('user', null);
+
+  app.addHook('onRequest', async (req, reply) => {
+    reply.header('X-Content-Type-Options', 'nosniff');
+    reply.header('Referrer-Policy', 'same-origin');
+    reply.header('Cache-Control', 'no-store');
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers[CSRF_HEADER] !== CSRF_VALUE) {
+      throw new HttpError(403, 'Missing request header.');
+    }
+    req.user = await userForSession(db, req.cookies[SESSION_COOKIE]);
+  });
+
+  app.setErrorHandler((error, req, reply) => {
+    if (error instanceof HttpError) return reply.status(error.status).send({ error: error.message, ...error.details });
+    const e = error as { validation?: unknown; statusCode?: number; code?: string; message: string };
+    if (e.validation) return reply.status(400).send({ error: `Invalid request: ${e.message}` });
+    if (e.code === '22P02') return reply.status(404).send({ error: 'Not found.' }); // malformed uuid
+    if (e.statusCode && e.statusCode < 500) return reply.status(e.statusCode).send({ error: e.message });
+    req.log.error(error);
+    return reply.status(500).send({ error: 'Something went wrong on the server.' });
+  });
+
+  app.get('/api/health', async () => ({ ok: true, database: db.kind }));
+  await app.register(authRoutes, { db, secureCookies, authAttempts });
+  await app.register(projectRoutes, { db });
+  await app.register(fileRoutes, { db });
+  await app.register(assetRoutes, { db });
+  app.setNotFoundHandler((_req, reply) => reply.status(404).send({ error: 'Not found.' }));
+  return app;
+}

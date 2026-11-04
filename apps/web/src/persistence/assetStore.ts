@@ -1,10 +1,13 @@
 /**
  * Binary asset storage (images). Documents only hold an `assetId`; the bytes live here.
  * Phase 2 keeps them in this browser's IndexedDB (localStorage is far too small for images).
- * Phase 6 swaps in server storage behind the same interface.
+ * Phase 6 stores them on the server (ServerAssetStore); the IndexedDB store remains for importing
+ * files made before accounts existed.
  *
  * Asset ids are SHA-256 hashes of the content, so importing the same image twice stores it once.
  */
+
+import { api, apiBlob } from './api';
 
 export interface AssetRecord {
   id: string;
@@ -67,8 +70,43 @@ export class MemoryAssetStore implements AssetStore {
   }
 }
 
-export const assetStore: AssetStore =
-  typeof indexedDB === 'undefined' ? new MemoryAssetStore() : new IndexedDbAssetStore();
+let assetProject: string | null = null;
+/** New images are uploaded into the project of the file that is open. */
+export function setAssetProject(projectId: string | null) {
+  assetProject = projectId;
+}
+
+/** Images stored on the server (Phase 6), shared by everyone in the project. */
+export class ServerAssetStore implements AssetStore {
+  async put(record: AssetRecord): Promise<void> {
+    if (!assetProject) throw new ImageImportError('Open a file before adding images.');
+    await api('PUT', `/projects/${assetProject}/assets/${record.id}`, record.blob, {
+      query: { width: record.width, height: record.height },
+      contentType: record.mime,
+    });
+  }
+
+  async get(id: string): Promise<AssetRecord | undefined> {
+    const res = await apiBlob(`/assets/${id}`);
+    if (res.status === 404) return undefined;
+    if (!res.ok) throw new Error(`Image could not be loaded (${res.status})`);
+    const blob = await res.blob();
+    return {
+      id,
+      mime: (res.headers.get('content-type') ?? blob.type) as ImageMime,
+      size: blob.size,
+      width: Number(res.headers.get('x-image-width')) || 1,
+      height: Number(res.headers.get('x-image-height')) || 1,
+      createdAt: res.headers.get('x-created-at') ?? new Date().toISOString(),
+      blob,
+    };
+  }
+}
+
+/** Images from before Phase 6, kept in this browser (read when importing local files). */
+export const localAssetStore: AssetStore = typeof indexedDB === 'undefined' ? new MemoryAssetStore() : new IndexedDbAssetStore();
+
+export const assetStore: AssetStore = import.meta.env.MODE === 'test' ? new MemoryAssetStore() : new ServerAssetStore();
 
 // ---------------------------------------------------------------------------
 // Importing images
