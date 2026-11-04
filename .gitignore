@@ -1,0 +1,19 @@
+node_modules
+dist
+coverage
+*.log
+.DS_Store
+
+# local env and secrets
+.env
+.env.*
+!.env.example
+
+# local data (database files, uploaded assets in development)
+data/
+uploads/
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea

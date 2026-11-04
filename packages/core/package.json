@@ -1,0 +1,14 @@
+{
+  "name": "@canvas-studio/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Framework-independent document model, operations, viewport math and tool catalog for Canvas Studio.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

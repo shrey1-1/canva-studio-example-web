@@ -1,0 +1,99 @@
+@import 'tailwindcss';
+
+/* Design tokens for the editor chrome (from the product spec palette). */
+@theme {
+  --color-app: #1e1e1e;
+  --color-sidebar: #252525;
+  --color-panel: #292929;
+  --color-inspector: #252525;
+  --color-edge: #383838;
+  --color-hover: #333333;
+  --color-accent: #3b82f6;
+  --color-accent-hover: #2563eb;
+  --color-fg: #ffffff;
+  --color-fg-muted: #a1a1aa;
+  --color-fg-subtle: #71717a;
+  --color-danger: #ef4444;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --text-2xs: 11px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-app);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* Compact, consistent focus ring for keyboard users. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+/* Thin scrollbars that suit a dark editor. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a4a transparent;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='color'] {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+input[type='color']::-webkit-color-swatch {
+  border: 1px solid var(--color-edge);
+  border-radius: 3px;
+}
+
+/* Tool player transitions (Auto-Slide / Flipbook). */
+@keyframes cs-slide-in { from { transform: translateX(100%); opacity: 0.4; } to { transform: none; opacity: 1; } }
+@keyframes cs-slide-out { from { transform: none; opacity: 1; } to { transform: translateX(-100%); opacity: 0.4; } }
+@keyframes cs-slide-in-rev { from { transform: translateX(-100%); opacity: 0.4; } to { transform: none; opacity: 1; } }
+@keyframes cs-slide-out-rev { from { transform: none; opacity: 1; } to { transform: translateX(100%); opacity: 0.4; } }
+@keyframes cs-push-in { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes cs-push-out { from { transform: none; } to { transform: translateY(-100%); } }
+@keyframes cs-push-in-rev { from { transform: translateY(-100%); } to { transform: none; } }
+@keyframes cs-push-out-rev { from { transform: none; } to { transform: translateY(100%); } }
+@keyframes cs-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cs-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes cs-zoom-in { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: none; } }
+@keyframes cs-flip-out { from { transform: rotateY(0deg); } to { transform: rotateY(-100deg); opacity: 0.2; } }
+@keyframes cs-flip-in { from { opacity: 0.6; } to { opacity: 1; } }
+.cs-slide-in, .cs-slide-out, .cs-slide-in-rev, .cs-slide-out-rev, .cs-push-in, .cs-push-out, .cs-push-in-rev,
+.cs-push-out-rev, .cs-fade-in, .cs-fade-out, .cs-zoom-in, .cs-flip-in, .cs-flip-out {
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: both;
+}
+.cs-slide-in { animation-name: cs-slide-in; } .cs-slide-out { animation-name: cs-slide-out; }
+.cs-slide-in-rev { animation-name: cs-slide-in-rev; } .cs-slide-out-rev { animation-name: cs-slide-out-rev; }
+.cs-push-in { animation-name: cs-push-in; } .cs-push-out { animation-name: cs-push-out; }
+.cs-push-in-rev { animation-name: cs-push-in-rev; } .cs-push-out-rev { animation-name: cs-push-out-rev; }
+.cs-fade-in { animation-name: cs-fade-in; } .cs-fade-out { animation-name: cs-fade-out; }
+.cs-zoom-in { animation-name: cs-zoom-in; }
+.cs-flip-in { animation-name: cs-flip-in; } .cs-flip-out { animation-name: cs-flip-out; z-index: 1; }
+@media (prefers-reduced-motion: reduce) {
+  [class^='cs-'], [class*=' cs-'] { animation-duration: 1ms !important; }
+}

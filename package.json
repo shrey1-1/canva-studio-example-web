@@ -1,0 +1,25 @@
+{
+  "name": "canvas-studio",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @canvas-studio/web",
+    "build": "npm run build -w @canvas-studio/web",
+    "preview": "npm run preview -w @canvas-studio/web",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "check": "npm run typecheck && npm run test"
+  },
+  "devDependencies": {
+    "jsdom": "^29.0.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}
