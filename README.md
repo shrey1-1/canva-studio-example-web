@@ -1,9 +1,63 @@
 # Canvas Studio
 
-A browser-based visual design editor: frames, shapes, layers, an inspector, a tools/plugin
-ecosystem, prototyping and (later) collaboration and AI-agent integration.
+A full-stack, browser-based design editor. Draw and lay out interfaces on an infinite canvas,
+link screens into clickable prototypes, edit the same file with other people in real time, and
+let AI agents read and change designs through an MCP server.
 
-**Status:** All 8 phases complete (foundation, core editor, design system, tools, prototyping, backend, collaboration / agents / export, hardening). See [docs/PLAN.md](docs/PLAN.md) for the roadmap.
+![Canvas Studio editor: layers panel, canvas with a generated grid layout, and the design inspector](docs/screenshots/editor.png)
+
+![Prototype mode: an interaction linking a button on one screen to another screen](docs/screenshots/prototype.png)
+
+## Features
+
+**Frontend (editor)**
+- Canvas editor with frames, shapes, pen paths, text and images; selection, smart guides, groups, masks and undo/redo
+- Layers panel, design inspector, components with variants, auto layout, constraints and variables (design tokens with modes)
+- Prototyping: interactions (click, hover, delay, etc.) with animated transitions, and a present mode
+- Live collaboration: other people's cursors and selections, and comments pinned to the canvas
+- Export to PNG, JPG, SVG and PDF
+- Sandboxed plugin tools: 13 built-in tools, plus custom tools that run with only the permissions you grant
+- Keyboard-first, accessible UI (checked with axe) that adapts to small screens
+
+**Backend (API server)**
+- REST API with schema validation on every route
+- Accounts with scrypt password hashing, httpOnly session cookies, CSRF protection and rate limiting
+- Projects, files, sharing (owner, editor and viewer roles), version history and image storage
+- Real-time sync over WebSockets: node-level changes, validated on the server, autosaved
+- Personal access tokens and an MCP server so AI agents (e.g. Claude) can work with designs
+- PostgreSQL, or embedded PostgreSQL (PGlite) with zero setup; migrations run automatically
+
+## Tech stack
+
+| Layer | Technologies |
+|---|---|
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, Zustand + Immer, Konva (canvas rendering), React Router |
+| Backend | Node.js, Fastify 5, PostgreSQL / PGlite, `ws` (WebSockets), Model Context Protocol SDK, Zod |
+| Shared core | Framework-free TypeScript package: document model, operations, geometry, sync diffing, SVG/PDF export |
+| Testing | Vitest (unit and component), Playwright (end-to-end), axe-core (accessibility) |
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph Browser
+    UI[React editor<br/>Konva canvas] --> Store[Zustand store]
+  end
+  Core[packages/core<br/>document model and operations]
+  Store --- Core
+  Store -- REST /api --> API[Fastify API]
+  Store -- WebSocket --> Hub[Collaboration hub]
+  Agent[AI agent] -- MCP --> MCP[MCP server] -- REST + token --> API
+  API --> DB[(PostgreSQL / PGlite)]
+  Hub --> DB
+  Hub --- Core
+```
+
+The document model lives in a shared package used by both the browser and the server, so edits
+are validated the same way on both sides. More detail is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
+and design decisions are in [docs/adr](docs/adr).
+
+**Tests:** about 220 unit and component tests plus end-to-end browser tests, including an accessibility audit.
 
 ## Requirements
 
